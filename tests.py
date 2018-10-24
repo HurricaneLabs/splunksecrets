@@ -42,7 +42,7 @@ class TestSplunkSecrets(unittest.TestCase):
         plaintext2 = splunksecrets.decrypt(splunk_secret[:16], ciphertext)
         self.assertEqual(plaintext2, plaintext1)
 
-    def test_end_to_end(self):
+    def test_end_to_end_new(self):
         splunk_secret = base64.b64encode(os.urandom(255))[:255]
         plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
         ciphertext = splunksecrets.encrypt_new(splunk_secret, plaintext1)

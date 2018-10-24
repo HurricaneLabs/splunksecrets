@@ -94,6 +94,7 @@ def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
 
     return "$7$%s" % base64.b64encode(b"%s%s%s" % (iv, ciphertext, encryptor.tag)).decode()
 
+
 def main():  # pragma: no cover
     """Command line interface"""
     cliargs = argparse.ArgumentParser()
