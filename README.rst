@@ -36,7 +36,7 @@ Usage
       -D, --decrypt
       --new
 
--  Use ```--new`` when encrypting/decrypting Splunk 7.2 secrets (indicated by ``$7$``)
+-  Use ``--new`` when encrypting/decrypting Splunk 7.2 secrets (indicated by ``$7$``)
 
 Encryption Schemes
 ------------------
