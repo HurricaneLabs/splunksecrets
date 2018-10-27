@@ -70,6 +70,11 @@ Known Issues
 Version History
 ---------------
 
+Version 0.2.1 (2018-10-27)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Cosmetic release to update metadata on PyPI
+
 Version 0.2.0 (2018-10-24)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -86,7 +91,7 @@ License Info
 
 The MIT License (MIT)
 
-Copyright (c) 2015 Hurricane Labs LLC
+Copyright (c) 2018 Hurricane Labs LLC
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

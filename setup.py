@@ -2,7 +2,11 @@ import subprocess
 from setuptools import setup, find_packages
 
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
+
+
+with open("README.rst", "r") as f:
+    long_description = f.read()
 
 
 setup(
@@ -13,6 +17,7 @@ setup(
     py_modules=["splunksecrets"],
     # url="http://hurricanelabs.github.io/flunk/",
     description="splunksecrets - Encrypt / Decrypt Splunk encrypted passwords",
+    long_description=long_description,
     install_requires=[
         "cryptography",
     ],
