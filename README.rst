@@ -1,4 +1,5 @@
 splunksecrets - Encrypt and Decrypt Splunk Passwords
+
 |Build Status| |codecov.io|
 ================================================================================
 
