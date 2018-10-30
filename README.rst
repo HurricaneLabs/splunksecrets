@@ -1,4 +1,5 @@
-splunksecrets - Encrypt and Decrypt Splunk Passwords |Build Status| |codecov.io|
+splunksecrets - Encrypt and Decrypt Splunk Passwords
+|Build Status| |codecov.io|
 ================================================================================
 
 ``splunksecrets`` is a tool for working with Splunk secrets offline. It currently
