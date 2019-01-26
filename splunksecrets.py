@@ -13,7 +13,7 @@ from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
-def decrypt(secret, ciphertext):
+def decrypt(secret, ciphertext,nosalt=False):
     """Given the first 16 bytes of splunk.secret, decrypt a Splunk password"""
     plaintext = None
     if ciphertext.startswith("$1$"):
@@ -26,8 +26,11 @@ def decrypt(secret, ciphertext):
         plaintext = decryptor.update(ciphertext)
 
         chars = []
-        for char1, char2 in zip(plaintext[:-1], itertools.cycle("DEFAULTSA")):
-            chars.append(six.byte2int([char1]) ^ ord(char2))
+        if nosalt == False:
+            for char1, char2 in zip(plaintext[:-1], itertools.cycle("DEFAULTSA")):
+                chars.append(six.byte2int([char1]) ^ ord(char2))
+        else:
+            chars = [ six.byte2int(x) for x in plaintext[:-1] ]
 
         plaintext = "".join([six.unichr(c) for c in chars])
     elif ciphertext.startswith("$7$"):
@@ -54,13 +57,17 @@ def decrypt(secret, ciphertext):
     return plaintext
 
 
-def encrypt(secret, plaintext):
+def encrypt(secret, plaintext,nosalt=False):
     """Given the first 16 bytes of splunk.secret, encrypt a Splunk password"""
     key = secret[:16]
 
     chars = []
-    for char1, char2 in zip(plaintext, itertools.cycle("DEFAULTSA")):
-        chars.append(ord(char1) ^ ord(char2))
+    if nosalt == False:
+        for char1, char2 in zip(plaintext, itertools.cycle("DEFAULTSA")):
+            chars.append(ord(char1) ^ ord(char2))
+    else:
+        chars=[ ord(x) for x in plaintext ]
+
     chars.append(0)
 
     plaintext = b"".join([six.int2byte(c) for c in chars])
@@ -101,6 +108,7 @@ def main():  # pragma: no cover
     cliargs.add_argument("--splunk-secret", required=True)
     cliargs.add_argument("-D", "--decrypt", action="store_const", dest="mode", const="decrypt")
     cliargs.add_argument("--new", action="store_const", dest="mode", const="encrypt_new")
+    cliargs.add_argument("--nosalt", action="store_true", dest="nosalt")
     args = cliargs.parse_args()
 
     with open(args.splunk_secret, "rb") as splunk_secret_file:
@@ -112,7 +120,7 @@ def main():  # pragma: no cover
         except KeyboardInterrupt:
             pass
         else:
-            print(decrypt(key, ciphertext))
+            print(decrypt(key, ciphertext,args.nosalt))
     else:
         try:
             plaintext = getpass.getpass("Plaintext password: ")
@@ -122,4 +130,4 @@ def main():  # pragma: no cover
             if args.mode == "encrypt_new":
                 print(encrypt_new(key, plaintext))
             else:
-                print(encrypt(key, plaintext))
+                print(encrypt(key, plaintext,args.nosalt))
