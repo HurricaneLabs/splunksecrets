@@ -1,4 +1,5 @@
 """Command line tool for encrypting/decrypting Splunk passwords"""
+from __future__ import print_function
 
 import argparse
 import base64
@@ -26,7 +27,7 @@ def decrypt(secret, ciphertext, nosalt=False):
         plaintext = decryptor.update(ciphertext)
 
         chars = []
-        if nosalt == False:
+        if nosalt is False:
             for char1, char2 in zip(plaintext[:-1], itertools.cycle("DEFAULTSA")):
                 chars.append(six.byte2int([char1]) ^ ord(char2))
         else:
@@ -62,11 +63,11 @@ def encrypt(secret, plaintext, nosalt=False):
     key = secret[:16]
 
     chars = []
-    if nosalt == False:
+    if nosalt is False:
         for char1, char2 in zip(plaintext, itertools.cycle("DEFAULTSA")):
             chars.append(ord(char1) ^ ord(char2))
     else:
-        chars=[ord(x) for x in plaintext]
+        chars = [ord(x) for x in plaintext]
 
     chars.append(0)
 
