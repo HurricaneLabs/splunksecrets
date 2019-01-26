@@ -31,7 +31,7 @@ def decrypt(secret, ciphertext, nosalt=False):
             for char1, char2 in zip(plaintext[:-1], itertools.cycle("DEFAULTSA")):
                 chars.append(six.byte2int([char1]) ^ ord(char2))
         else:
-            chars = [six.byte2int(x) for x in plaintext[:-1]]
+            chars = [six.byte2int([char]) for char in plaintext[:-1]]
 
         plaintext = "".join([six.unichr(c) for c in chars])
     elif ciphertext.startswith("$7$"):
