@@ -31,14 +31,17 @@ Usage
 ::
 
     usage: splunksecrets [-h] --splunk-secret SPLUNK_SECRET [-D] [--new]
+                         [--nosalt]
 
     optional arguments:
       -h, --help            show this help message and exit
       --splunk-secret SPLUNK_SECRET
       -D, --decrypt
       --new
+      --nosalt
 
 -  Use ``--new`` when encrypting/decrypting Splunk 7.2 secrets (indicated by ``$7$``)
+-  Use ``--nosalt`` when encrypting/decrypting Splunk pre-7.2 secrets that are not hashed
 
 Encryption Schemes
 ------------------
@@ -71,6 +74,12 @@ Known Issues
 
 Version History
 ---------------
+
+Version 0.3.0 (2019-01-26)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Add ``--nosalt`` flag for pre-7.2 passwords that are not salted, such as ``sslPassword`` (thanks
+  duckfez)
 
 Version 0.2.1 (2018-10-27)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
