@@ -123,7 +123,7 @@ def main():  # pragma: no cover
     else:
         raise argparse.ArgumentTypeError('--splunk-secret or --splunk-secret-text must be defined')
     if args.mode == "decrypt":
-        if (!args.password):
+        if (args.password is None):
             try:
                 ciphertext = six.moves.input("Encrypted password: ")
             except KeyboardInterrupt:
@@ -133,7 +133,7 @@ def main():  # pragma: no cover
         else:
             print(decrypt(key, args.password, args.nosalt))
     else:
-        if(!args.password):
+        if(args.password is None):
             try:
                 plaintext = getpass.getpass("Plaintext password: ")
             except KeyboardInterrupt:
