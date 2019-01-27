@@ -106,29 +106,45 @@ def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
 def main():  # pragma: no cover
     """Command line interface"""
     cliargs = argparse.ArgumentParser()
-    cliargs.add_argument("--splunk-secret", required=True)
+    
+    cliargs.add_argument("--splunk-secret", required=False)
+    cliargs.add_argument("--splunk-secret-text", required=False)
     cliargs.add_argument("-D", "--decrypt", action="store_const", dest="mode", const="decrypt")
     cliargs.add_argument("--new", action="store_const", dest="mode", const="encrypt_new")
     cliargs.add_argument("--nosalt", action="store_true", dest="nosalt")
+    cliargs.add_argument("--password")
     args = cliargs.parse_args()
-
-    with open(args.splunk_secret, "rb") as splunk_secret_file:
-        key = splunk_secret_file.read().strip()
-
-    if args.mode == "decrypt":
-        try:
-            ciphertext = six.moves.input("Encrypted password: ")
-        except KeyboardInterrupt:
-            pass
-        else:
-            print(decrypt(key, ciphertext, args.nosalt))
+    
+    if(args.splunk_secret):
+        with open(args.splunk_secret, "rb") as splunk_secret_file:
+            key = splunk_secret_file.read().strip()
+    elif (args.splunk_secret_text):
+        key=args.splunk_secret_text.strip()
     else:
-        try:
-            plaintext = getpass.getpass("Plaintext password: ")
-        except KeyboardInterrupt:
-            pass
-        else:
-            if args.mode == "encrypt_new":
-                print(encrypt_new(key, plaintext))
+        raise argparse.ArgumentTypeError('--splunk-secret or --splunk-secret-text must be defined')
+    if args.mode == "decrypt":
+        if (!args.password):
+            try:
+                ciphertext = six.moves.input("Encrypted password: ")
+            except KeyboardInterrupt:
+                pass
             else:
-                print(encrypt(key, plaintext, args.nosalt))
+                print(decrypt(key, ciphertext, args.nosalt))
+        else:
+            print(decrypt(key, args.password, args.nosalt))
+    else:
+        if(!args.password):
+            try:
+                plaintext = getpass.getpass("Plaintext password: ")
+            except KeyboardInterrupt:
+                pass
+            else:
+                if args.mode == "encrypt_new":
+                    print(encrypt_new(key, plaintext))
+                else:
+                    print(encrypt(key, plaintext, args.nosalt))
+        else:
+           if args.mode == "encrypt_new":
+                print(encrypt_new(key, args.password))
+           else:
+                print(encrypt(key, args.password, args.nosalt))
