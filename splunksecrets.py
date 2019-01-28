@@ -121,7 +121,8 @@ def main():  # pragma: no cover
     elif args.splunk_secret_text:
         key = args.splunk_secret_text.strip()
     else:
-        raise argparse.ArgumentTypeError('--splunk-secret or --splunk-secret-text must be defined')
+        raise argparse.ArgumentTypeError("--splunk-secret or --splunk-secret-text must be defined")
+
     if args.mode == "decrypt":
         try:
             ciphertext = args.password or six.moves.input("Encrypted password: ")
