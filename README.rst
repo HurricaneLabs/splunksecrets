@@ -30,18 +30,23 @@ Usage
 
 ::
 
-    usage: splunksecrets [-h] --splunk-secret SPLUNK_SECRET [-D] [--new]
-                         [--nosalt]
+    usage: splunksecrets [-h] [--splunk-secret SPLUNK_SECRET]
+                     [--splunk-secret-text SPLUNK_SECRET_TEXT] [-D] [--new]
+                     [--nosalt] [--password PASSWORD]
 
     optional arguments:
       -h, --help            show this help message and exit
       --splunk-secret SPLUNK_SECRET
+      --splunk-secret-text SPLUNK_SECRET_TEXT
       -D, --decrypt
       --new
       --nosalt
+      --password PASSWORD
 
 -  Use ``--new`` when encrypting/decrypting Splunk 7.2 secrets (indicated by ``$7$``)
 -  Use ``--nosalt`` when encrypting/decrypting Splunk pre-7.2 secrets that are not hashed
+-  Use ``--splunk-secret-text`` to specify ``splunk.secret`` contents on the command line
+-  Use ``--password`` to specify password to be encrypted/decrypted on the command line
 
 Encryption Schemes
 ------------------
@@ -79,6 +84,8 @@ Version 0.3.1 (2019-02-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Fix bug when a character in the password was the same as the salt character
+- Add ``--splunk-secret-text`` and ``--password`` arguments for non-interactive use (thanks
+  nadidsky)
 
 Version 0.3.0 (2019-01-26)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
