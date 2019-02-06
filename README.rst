@@ -75,6 +75,11 @@ Known Issues
 Version History
 ---------------
 
+Version 0.3.1 (2019-02-06)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Fix bug when a character in the password was the same as the salt character
+
 Version 0.3.0 (2019-01-26)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 

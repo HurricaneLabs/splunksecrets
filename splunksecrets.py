@@ -29,7 +29,10 @@ def decrypt(secret, ciphertext, nosalt=False):
         chars = []
         if nosalt is False:
             for char1, char2 in zip(plaintext[:-1], itertools.cycle("DEFAULTSA")):
-                chars.append(six.byte2int([char1]) ^ ord(char2))
+                if six.byte2int([char1]) == ord(char2):
+                    chars.append(six.byte2int([char1]))
+                else:
+                    chars.append(six.byte2int([char1]) ^ ord(char2))
         else:
             chars = [six.byte2int([char]) for char in plaintext[:-1]]
 
@@ -65,7 +68,10 @@ def encrypt(secret, plaintext, nosalt=False):
     chars = []
     if nosalt is False:
         for char1, char2 in zip(plaintext, itertools.cycle("DEFAULTSA")):
-            chars.append(ord(char1) ^ ord(char2))
+            if ord(char1) == ord(char2):
+                chars.append(ord(char1))
+            else:
+                chars.append(ord(char1) ^ ord(char2))
     else:
         chars = [ord(x) for x in plaintext]
 
