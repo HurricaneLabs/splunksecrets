@@ -7,6 +7,7 @@ import getpass
 import itertools
 import os
 
+import pcrypt
 import six
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
@@ -116,6 +117,7 @@ def main():  # pragma: no cover
     cliargs.add_argument("--splunk-secret", required=False)
     cliargs.add_argument("--splunk-secret-text", required=False)
     cliargs.add_argument("-D", "--decrypt", action="store_const", dest="mode", const="decrypt")
+    cliargs.add_argument("-H", "--hash-passwd", action="store_const", dest="mode", const="hash")
     cliargs.add_argument("--new", action="store_const", dest="mode", const="encrypt_new")
     cliargs.add_argument("--nosalt", action="store_true", dest="nosalt")
     cliargs.add_argument("--password")
@@ -126,23 +128,23 @@ def main():  # pragma: no cover
             key = splunk_secret_file.read().strip()
     elif args.splunk_secret_text:
         key = args.splunk_secret_text.strip()
-    else:
+    elif args.mode != "hash":
         raise argparse.ArgumentTypeError("--splunk-secret or --splunk-secret-text must be defined")
 
-    if args.mode == "decrypt":
-        try:
+    try:
+        if args.mode == "decrypt":
             ciphertext = args.password or six.moves.input("Encrypted password: ")
-        except KeyboardInterrupt:
-            pass
+            output = decrypt(key, ciphertext, args.nosalt)
+        elif args.mode == "hash":
+            ciphertext = args.password or getpass.getpass("Password: ")
+            output = pcrypt.crypt(ciphertext)
         else:
-            print(decrypt(key, ciphertext, args.nosalt))
-    else:
-        try:
             plaintext = args.password or getpass.getpass("Plaintext password: ")
-        except KeyboardInterrupt:
-            pass
-        else:
             if args.mode == "encrypt_new":
-                print(encrypt_new(key, plaintext))
+                output = encrypt_new(key, plaintext)
             else:
-                print(encrypt(key, plaintext, args.nosalt))
+                output = encrypt(key, plaintext, args.nosalt)
+    except KeyboardInterrupt:
+        pass
+    else:
+        print(output)

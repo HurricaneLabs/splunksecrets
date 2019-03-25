@@ -39,6 +39,7 @@ Usage
       --splunk-secret SPLUNK_SECRET
       --splunk-secret-text SPLUNK_SECRET_TEXT
       -D, --decrypt
+      -H, --hash-passwd
       --new
       --nosalt
       --password PASSWORD
@@ -47,9 +48,17 @@ Usage
 -  Use ``--nosalt`` when encrypting/decrypting Splunk pre-7.2 secrets that are not hashed
 -  Use ``--splunk-secret-text`` to specify ``splunk.secret`` contents on the command line
 -  Use ``--password`` to specify password to be encrypted/decrypted on the command line
+-  Use ``--hash-password`` to generate a hash for $SPLUNK_HOME/etc/passwd
 
 Encryption Schemes
 ------------------
+
+Splunk passwd hashes
+~~~~~~~~~~~~~~~~~~~~
+
+Splunk password hashes are not, strictly speaking, encrypted. They're hashed using the standard
+Unix ``crypt`` function. The ``$6$`` indicates that SHA-512 hashing algorithm is used. Details on
+SHA-crypt can be found `here <https://akkadia.org/drepper/SHA-crypt.txt>`_.
 
 Splunk pre-7.2
 ~~~~~~~~~~~~~~
@@ -79,6 +88,11 @@ Known Issues
 
 Version History
 ---------------
+
+Version 0.4.0 (2019-03-25)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Add ``--hash-passwd`` flag for generating Splunk password hashes
 
 Version 0.3.1 (2019-02-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
