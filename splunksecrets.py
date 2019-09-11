@@ -114,8 +114,8 @@ def main():  # pragma: no cover
     """Command line interface"""
     cliargs = argparse.ArgumentParser()
 
-    cliargs.add_argument("--splunk-secret", required=False)
-    cliargs.add_argument("--splunk-secret-text", required=False)
+    cliargs.add_argument("--splunk-secret", required=False, type=six.ensure_binary)
+    cliargs.add_argument("--splunk-secret-text", required=False, type=six.ensure_binary)
     cliargs.add_argument("-D", "--decrypt", action="store_const", dest="mode", const="decrypt")
     cliargs.add_argument("-H", "--hash-passwd", action="store_const", dest="mode", const="hash")
     cliargs.add_argument("--new", action="store_const", dest="mode", const="encrypt_new")

@@ -1,7 +1,7 @@
 from setuptools import setup
 
 
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 
 
 with open("README.rst", "r") as f:
@@ -18,7 +18,8 @@ setup(
     long_description=long_description,
     install_requires=[
         "cryptography",
-        "pcrypt"
+        "pcrypt",
+        "six>=1.12.0"
     ],
     entry_points={
         "console_scripts": [
