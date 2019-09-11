@@ -45,23 +45,27 @@ Usage
      --nosalt
      --password PASSWORD
 
--  Use ``--new`` when encrypting/decrypting Splunk 7.2 secrets
-   (indicated by ``$7$``)
--  Use ``--nosalt`` when encrypting/decrypting Splunk pre-7.2 secrets
-   that are not hashed
--  Use ``--splunk-secret-text`` to specify ``splunk.secret`` contents on
-   the command line
+     * a bullet point using "*"
 
-- Use ``--password`` to specify password to be encrypted/decrypted on the command line
-   -  NOTE: when doing so, on \*nix or other platforms running bash-like
-      shells, you must escape the ``$`` in passwords, like so:
+       - a sub-list using "-"
 
-      ::
+- Use ``--new`` when encrypting/decrypting Splunk 7.2 secrets
+  (indicated by ``$7$``)
+- Use ``--nosalt`` when encrypting/decrypting Splunk pre-7.2 secrets that are
+  not hashed
+- Use ``--splunk-secret-text`` to specify ``splunk.secret`` contents on the
+  command line
+- Use ``--password`` to specify password to be encrypted/decrypted on the
+  command line
 
-         splunksecrets --splunk-secret-text ... --password \$1\$.....
+  - NOTE: when doing so, on \*nix or other platforms running bash-like
+    shells, you must escape the ``$`` in passwords, like so:
 
--  Use ``--hash-password`` to generate a hash for
-   $SPLUNK_HOME/etc/passwd
+    ::
+
+        splunksecrets --splunk-secret-text ... --password \$1\$.....
+
+- Use ``--hash-password`` to generate a hash for $SPLUNK_HOME/etc/passwd
 
 Encryption Schemes
 ------------------
@@ -102,7 +106,7 @@ to produce the encrypted password seen in the configuration files.
 Known Issues
 ------------
 
--  None so far!
+- None so far!
 
 Version History
 ---------------
@@ -110,43 +114,43 @@ Version History
 Version 0.4.1 (2019-09-11)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  Fix an issue in Python 3 when using ``--splunk-secret-text`` (thanks
+- Fix an issue in Python 3 when using ``--splunk-secret-text`` (thanks
    Joeboyc2)
 
 Version 0.4.0 (2019-03-25)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  Add ``--hash-passwd`` flag for generating Splunk password hashes
+- Add ``--hash-passwd`` flag for generating Splunk password hashes
 
 Version 0.3.1 (2019-02-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  Fix bug when a character in the password was the same as the salt
+- Fix bug when a character in the password was the same as the salt
    character
--  Add ``--splunk-secret-text`` and ``--password`` arguments for
+- Add ``--splunk-secret-text`` and ``--password`` arguments for
    non-interactive use (thanks nadidsky)
 
 Version 0.3.0 (2019-01-26)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  Add ``--nosalt`` flag for pre-7.2 passwords that are not salted, such
+- Add ``--nosalt`` flag for pre-7.2 passwords that are not salted, such
    as ``sslPassword`` (thanks duckfez)
 
 Version 0.2.1 (2018-10-27)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  Cosmetic release to update metadata on PyPI
+- Cosmetic release to update metadata on PyPI
 
 Version 0.2.0 (2018-10-24)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  Add support for Splunk 7.2
+- Add support for Splunk 7.2
 
 Version 0.1.0 (2018-10-08)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  Initial release
--  Support Splunk < 7.2
+- Initial release
+- Support Splunk < 7.2
 
 License Info
 ------------
