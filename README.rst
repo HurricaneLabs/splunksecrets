@@ -111,11 +111,17 @@ Known Issues
 Version History
 ---------------
 
+Version 0.4.2 (2019-09-29)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Add handling for incorrectly padded (but otherwise correct) password
+  strings as a convenience (thanks rafrey-his)
+
 Version 0.4.1 (2019-09-11)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Fix an issue in Python 3 when using ``--splunk-secret-text`` (thanks
-   Joeboyc2)
+  Joeboyc2)
 
 Version 0.4.0 (2019-03-25)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -126,15 +132,15 @@ Version 0.3.1 (2019-02-06)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Fix bug when a character in the password was the same as the salt
-   character
+  character
 - Add ``--splunk-secret-text`` and ``--password`` arguments for
-   non-interactive use (thanks nadidsky)
+  non-interactive use (thanks nadidsky)
 
 Version 0.3.0 (2019-01-26)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Add ``--nosalt`` flag for pre-7.2 passwords that are not salted, such
-   as ``sslPassword`` (thanks duckfez)
+  as ``sslPassword`` (thanks duckfez)
 
 Version 0.2.1 (2018-10-27)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
