@@ -15,11 +15,19 @@ from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
+def b64decode(encoded):
+    """Wrapper around `base64.b64decode` to add padding if necessary"""
+    padding_len = 4 - (len(encoded) % 4)
+    if padding_len < 4:
+        encoded += "=" * padding_len
+    return base64.b64decode(encoded)
+
+
 def decrypt(secret, ciphertext, nosalt=False):
     """Given the first 16 bytes of splunk.secret, decrypt a Splunk password"""
     plaintext = None
     if ciphertext.startswith("$1$"):
-        ciphertext = base64.b64decode(ciphertext[3:])
+        ciphertext = b64decode(ciphertext[3:])
         key = secret[:16]
 
         algorithm = algorithms.ARC4(key)
@@ -39,7 +47,7 @@ def decrypt(secret, ciphertext, nosalt=False):
 
         plaintext = "".join([six.unichr(c) for c in chars])
     elif ciphertext.startswith("$7$"):
-        ciphertext = base64.b64decode(ciphertext[3:])
+        ciphertext = b64decode(ciphertext[3:])
 
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),

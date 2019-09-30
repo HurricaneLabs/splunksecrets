@@ -70,6 +70,13 @@ class TestSplunkSecrets(unittest.TestCase):
         )
         self.assertEqual(plaintext, "DEFAULTSA" * 8)
 
+    def test_decrypt_unpadded_base64(self):
+        plaintext = splunksecrets.decrypt(
+            splunk_secret,
+            "$1$iqw4ag"
+        )
+        self.assertEqual(plaintext, "aaa")
+
     def test_end_to_end(self):
         splunk_secret = base64.b64encode(os.urandom(255))[:255]
         plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
