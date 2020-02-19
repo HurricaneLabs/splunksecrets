@@ -45,10 +45,6 @@ Usage
      --nosalt
      --password PASSWORD
 
-     * a bullet point using "*"
-
-       - a sub-list using "-"
-
 - Use ``--new`` when encrypting/decrypting Splunk 7.2 secrets
   (indicated by ``$7$``)
 - Use ``--nosalt`` when encrypting/decrypting Splunk pre-7.2 secrets that are
@@ -106,10 +102,21 @@ to produce the encrypted password seen in the configuration files.
 Known Issues
 ------------
 
-- None so far!
+- If the splunk secret and an encrypted password don't match, one of
+  two things will happen - either you'll get gibberish output, or a
+  Python traceback. At some point, we'll hopefully have better error
+  checking for this.
 
 Version History
 ---------------
+
+Version 0.4.3 (2020-02-17)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Correct an issue when splunk secret is too long. Splunk handles this
+  by truncating splunk.secret to 254 bytes, so we now do the same
+  (thanks nbertram)
+- Added error checking in case, somehow, splunk secret is too short.
 
 Version 0.4.2 (2019-09-29)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

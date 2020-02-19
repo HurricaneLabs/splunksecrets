@@ -26,8 +26,11 @@ def b64decode(encoded):
 def decrypt(secret, ciphertext, nosalt=False):
     """Given the first 16 bytes of splunk.secret, decrypt a Splunk password"""
     plaintext = None
+
     if ciphertext.startswith("$1$"):
         ciphertext = b64decode(ciphertext[3:])
+        if len(secret) < 16:
+            raise ValueError("secret too short, need 16 bytes, got %d" % len(secret))
         key = secret[:16]
 
         algorithm = algorithms.ARC4(key)
@@ -47,6 +50,8 @@ def decrypt(secret, ciphertext, nosalt=False):
 
         plaintext = "".join([six.unichr(c) for c in chars])
     elif ciphertext.startswith("$7$"):
+        if len(secret) < 254:
+            raise ValueError("secret too short, need 254 bytes, got %d" % len(secret))
         ciphertext = b64decode(ciphertext[3:])
 
         kdf = PBKDF2HMAC(
@@ -56,7 +61,7 @@ def decrypt(secret, ciphertext, nosalt=False):
             iterations=1,
             backend=default_backend()
         )
-        key = kdf.derive(secret)
+        key = kdf.derive(secret[:254])
 
         iv = ciphertext[:16]  # pylint: disable=invalid-name
         tag = ciphertext[-16:]
@@ -72,6 +77,9 @@ def decrypt(secret, ciphertext, nosalt=False):
 
 def encrypt(secret, plaintext, nosalt=False):
     """Given the first 16 bytes of splunk.secret, encrypt a Splunk password"""
+    if len(secret) < 16:
+        raise ValueError("secret too short, need 16 bytes, got %d" % len(secret))
+
     key = secret[:16]
 
     chars = []
@@ -98,6 +106,9 @@ def encrypt(secret, plaintext, nosalt=False):
 
 def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
     """Use the new AES 256 GCM encryption in Splunk 7.2"""
+    if len(secret) < 254:
+        raise ValueError("secret too short, need 254 bytes, got %d" % len(secret))
+
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
@@ -105,7 +116,7 @@ def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
         iterations=1,
         backend=default_backend()
     )
-    key = kdf.derive(secret)
+    key = kdf.derive(secret[:254])
 
     if iv is None:
         iv = os.urandom(16)
