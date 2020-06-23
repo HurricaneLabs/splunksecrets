@@ -49,10 +49,12 @@ Usage
   (indicated by ``$7$``)
 - Use ``--nosalt`` when encrypting/decrypting Splunk pre-7.2 secrets that are
   not hashed
+- Use ``--splunk-secret`` to specify a path to splunk.secret, or use the
+  ``SPLUNK_SECRET`` environment variable
 - Use ``--splunk-secret-text`` to specify ``splunk.secret`` contents on the
-  command line
+  command line, or use the ``SPLUNK_SECRET_TEXT`` environment variable
 - Use ``--password`` to specify password to be encrypted/decrypted on the
-  command line
+  command line, or use the ``PASSWORD`` environment variable
 
   - NOTE: when doing so, on \*nix or other platforms running bash-like
     shells, you must escape the ``$`` in passwords, like so:
@@ -109,6 +111,13 @@ Known Issues
 
 Version History
 ---------------
+
+Version 0.5.0 (2020-06-23)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Add support for passing a path to splunk.secret, the splunk.secret
+  contents, and the password/password hash via environment variables
+  (thanks hanswurscht)
+- Added error output when trying to decrypt user passwords
 
 Version 0.4.3 (2020-02-17)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

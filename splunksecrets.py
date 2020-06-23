@@ -133,13 +133,15 @@ def main():  # pragma: no cover
     """Command line interface"""
     cliargs = argparse.ArgumentParser()
 
-    cliargs.add_argument("--splunk-secret", required=False, type=six.ensure_binary)
-    cliargs.add_argument("--splunk-secret-text", required=False, type=six.ensure_binary)
+    cliargs.add_argument("--splunk-secret", required=False, type=six.ensure_binary,
+                         default=os.environ.get("SPLUNK_SECRET"))
+    cliargs.add_argument("--splunk-secret-text", required=False, type=six.ensure_binary,
+                         default=os.environ.get("SPLUNK_SECRET"))
     cliargs.add_argument("-D", "--decrypt", action="store_const", dest="mode", const="decrypt")
     cliargs.add_argument("-H", "--hash-passwd", action="store_const", dest="mode", const="hash")
     cliargs.add_argument("--new", action="store_const", dest="mode", const="encrypt_new")
     cliargs.add_argument("--nosalt", action="store_true", dest="nosalt")
-    cliargs.add_argument("--password")
+    cliargs.add_argument("--password", default=os.environ.get("PASSWORD"))
     args = cliargs.parse_args()
 
     if args.splunk_secret:
@@ -153,7 +155,10 @@ def main():  # pragma: no cover
     try:
         if args.mode == "decrypt":
             ciphertext = args.password or six.moves.input("Encrypted password: ")
-            output = decrypt(key, ciphertext, args.nosalt)
+            if ciphertext.startswith("$6$"):
+                output = "Cannot decrypt Splunk user passwords - passwords are hashed not encrypted"
+            else:
+                output = decrypt(key, ciphertext, args.nosalt)
         elif args.mode == "hash":
             ciphertext = args.password or getpass.getpass("Password: ")
             output = pcrypt.crypt(ciphertext)
