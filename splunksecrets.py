@@ -1,6 +1,7 @@
 """Command line tool for encrypting/decrypting Splunk passwords"""
 from __future__ import print_function
 
+from builtins import zip
 import argparse
 import base64
 import getpass
@@ -48,7 +49,7 @@ def decrypt(secret, ciphertext, nosalt=False):
         else:
             chars = [six.byte2int([char]) for char in plaintext[:-1]]
 
-        plaintext = "".join([six.unichr(c) for c in chars])
+        plaintext = "".join([six.chr(c) for c in chars])
     elif ciphertext.startswith("$7$"):
         if len(secret) < 254:
             raise ValueError("secret too short, need 254 bytes, got %d" % len(secret))
@@ -61,7 +62,7 @@ def decrypt(secret, ciphertext, nosalt=False):
             iterations=1,
             backend=default_backend()
         )
-        key = kdf.derive(secret[:254])
+        key = kdf.derive(secret[:254].encode("utf-8"))
 
         iv = ciphertext[:16]  # pylint: disable=invalid-name
         tag = ciphertext[-16:]
