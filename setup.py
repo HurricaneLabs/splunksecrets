@@ -1,7 +1,7 @@
 from setuptools import setup
 
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 
 
 with open("README.rst", "r") as f:
@@ -17,8 +17,9 @@ setup(
     description="splunksecrets - Encrypt / Decrypt Splunk encrypted passwords",
     long_description=long_description,
     install_requires=[
-        "cryptography",
         "pcrypt",
+        "pprp",
+        "pyaes",
         "six>=1.12.0"
     ],
     entry_points={

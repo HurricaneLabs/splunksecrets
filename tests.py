@@ -6,6 +6,7 @@ import unittest
 import six
 
 import splunksecrets
+from splunksecrets import bytes_to_long, long_to_bytes
 
 
 splunk_secret = six.b(
@@ -17,6 +18,40 @@ splunk_secret = six.b(
 
 
 class TestSplunkSecrets(unittest.TestCase):
+    def test_long_to_bytes(self):
+        self.assertEqual(long_to_bytes(0xdeadbeef), six.b("\xde\xad\xbe\xef"))
+
+    def test_long_to_bytes_pad(self):
+        self.assertEqual(long_to_bytes(0xdeadbeef, 5), six.b("\x00\xde\xad\xbe\xef"))
+
+    def test_long_to_bytes_truncate(self):
+        self.assertEqual(long_to_bytes(0xdeadbeef, 2), six.b("\xde\xad"))
+
+    def test_bytes_to_long(self):
+        self.assertEqual(bytes_to_long(six.b("\xde\xad\xbe\xef")), 0xdeadbeef)
+
+    def test_counter_value(self):
+        counter = splunksecrets.Counter()
+        self.assertEqual(counter.value, [0, 0, 0, 1])
+
+    def test_counter_initial_value(self):
+        counter = splunksecrets.Counter(initial_value=2)
+        self.assertEqual(counter.value, [0, 0, 0, 2])
+
+    def test_counter_initial_increment(self):
+        counter = splunksecrets.Counter()
+        counter.increment()
+        self.assertEqual(counter.value, [0, 0, 0, 2])
+
+    def test_counter_value_includes_prefix(self):
+        counter = splunksecrets.Counter(prefix=six.b("\x00\x00\x00\x00"))
+        self.assertEqual(counter.value, [0, 0, 0, 0, 0, 0, 0, 1])
+
+    def test_counter_overflow(self):
+        counter = splunksecrets.Counter(initial_value=0xffffffff)
+        counter.increment()
+        self.assertEqual(counter.value, [0, 0, 0, 0])
+
     def test_encrypt(self):
         ciphertext = splunksecrets.encrypt(splunk_secret, "temp1234")
         self.assertEqual(ciphertext, "$1$n6g0W7F51ZAK")
@@ -37,6 +72,14 @@ class TestSplunkSecrets(unittest.TestCase):
             iv=six.b("i5dKMGaSIRNpJty4")
         )
         self.assertEqual(ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g==")
+
+    def test_encrypt_new_no_padding(self):
+        ciphertext = splunksecrets.encrypt_new(
+            splunk_secret,
+            "temp12344321pmet",
+            iv=six.b("i5dKMGaSIRNpJty4")
+        )
+        self.assertEqual(ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t8cdTNkhq354S1l9IDjbxt3CJ4TPF4oSZ9")
 
     def test_encrypt_new_raises_value_error_short_secret(self):
         with self.assertRaises(ValueError):
@@ -78,6 +121,13 @@ class TestSplunkSecrets(unittest.TestCase):
             "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g=="
         )
         self.assertEqual(plaintext, "temp1234")
+
+    def test_decrypt_new_fails(self):
+        with self.assertRaises(ValueError):
+            splunksecrets.decrypt(
+                splunk_secret,
+                "$7$bTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g=="
+            )
 
     def test_decrypt_character_matches_salt1(self):
         plaintext = splunksecrets.decrypt(

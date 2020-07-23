@@ -112,6 +112,11 @@ Known Issues
 Version History
 ---------------
 
+Version 0.6.0 (2020-07-23)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Converted crypto code to use pure-python libraries to faciliate
+  use within a Splunk app (thanks jrzmurray)
+
 Version 0.5.0 (2020-06-23)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Add support for passing a path to splunk.secret, the splunk.secret
