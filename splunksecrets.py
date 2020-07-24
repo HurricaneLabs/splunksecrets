@@ -165,7 +165,6 @@ class AesGcm:
         for i in range(len(data) // 16):
             tag ^= bytes_to_long(data[i * 16: (i + 1) * 16])
             tag = self.__times_auth_key(tag)
-            # print "X\t", hex(tag)
         tag ^= 8 * len_txt
         tag = self.__times_auth_key(tag)
 
@@ -208,10 +207,7 @@ class AesGcm:
             init_value = bytes_to_long(init_value)
 
         iv_bytes = long_to_bytes(init_value)
-        if len(iv_bytes) == 12:
-            initial_counter_bytes = iv_bytes + six.b("\x00\x00\x00\x01")
-        else:
-            initial_counter_bytes = long_to_bytes(self.__ghash(iv_bytes), 16)
+        initial_counter_bytes = long_to_bytes(self.__ghash(iv_bytes), 16)
 
         counter_prefix = initial_counter_bytes[:12]
         initial_counter_value = bytes_to_long(initial_counter_bytes[12:])
@@ -253,16 +249,17 @@ def decrypt(secret, ciphertext, nosalt=False):
     """Given the first 16 bytes of splunk.secret, decrypt a Splunk password"""
     plaintext = None
 
+    if isinstance(secret, six.text_type):
+        secret = secret.encode()
+    if isinstance(ciphertext, six.binary_type):
+        ciphertext = ciphertext.decode()
+
     if ciphertext.startswith("$1$"):
         ciphertext = b64decode(ciphertext[3:])
         if len(secret) < 16:
             raise ValueError("secret too short, need 16 bytes, got %d" % len(secret))
         key = secret[:16]
 
-        # algorithm = algorithms.ARC4(key)
-        # cipher = Cipher(algorithm, mode=None, backend=default_backend())
-        # decryptor = cipher.decryptor()
-        # plaintext = decryptor.update(ciphertext)
         plaintext = arcfour(key, ciphertext)
 
         chars = []
@@ -281,23 +278,9 @@ def decrypt(secret, ciphertext, nosalt=False):
             raise ValueError("secret too short, need 254 bytes, got %d" % len(secret))
         ciphertext = b64decode(ciphertext[3:])
 
-        # kdf = PBKDF2HMAC(
-        #     algorithm=hashes.SHA256(),
-        #     length=32,
-        #     salt=b"disk-encryption",
-        #     iterations=1,
-        #     backend=default_backend()
-        # )
-        # key = kdf.derive(secret[:254])
-
         iv = ciphertext[:16]  # pylint: disable=invalid-name
         tag = ciphertext[-16:]
         ciphertext = ciphertext[16:-16]
-
-        # algorithm = algorithms.AES(key)
-        # cipher = Cipher(algorithm, mode=modes.GCM(iv, tag), backend=default_backend())
-        # decryptor = cipher.decryptor()
-        # plaintext = decryptor.update(ciphertext).decode()
 
         key = pbkdf2(
             digestmod=hashlib.sha256,
@@ -319,6 +302,11 @@ def encrypt(secret, plaintext, nosalt=False):
     if len(secret) < 16:
         raise ValueError("secret too short, need 16 bytes, got %d" % len(secret))
 
+    if isinstance(secret, six.text_type):
+        secret = secret.encode()
+    if isinstance(plaintext, six.binary_type):
+        plaintext = plaintext.decode()
+
     key = secret[:16]
 
     chars = []
@@ -335,10 +323,6 @@ def encrypt(secret, plaintext, nosalt=False):
 
     plaintext = b"".join([six.int2byte(c) for c in chars])
 
-    # algorithm = algorithms.ARC4(key)
-    # cipher = Cipher(algorithm, mode=None, backend=default_backend())
-    # encryptor = cipher.encryptor()
-    # ciphertext = encryptor.update(plaintext)
     ciphertext = arcfour(key, plaintext)
 
     return "$1$%s" % base64.b64encode(ciphertext).decode()
@@ -348,23 +332,11 @@ def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
     """Use the new AES 256 GCM encryption in Splunk 7.2"""
     if len(secret) < 254:
         raise ValueError("secret too short, need 254 bytes, got %d" % len(secret))
-
-    # kdf = PBKDF2HMAC(
-    #     algorithm=hashes.SHA256(),
-    #     length=32,
-    #     salt=b"disk-encryption",
-    #     iterations=1,
-    #     backend=default_backend()
-    # )
-    # key = kdf.derive(secret[:254])
+    if isinstance(secret, six.text_type):
+        secret = secret.encode()
 
     if iv is None:
         iv = os.urandom(16)
-
-    # algorithm = algorithms.AES(key)
-    # cipher = Cipher(algorithm, mode=modes.GCM(iv), backend=default_backend())
-    # encryptor = cipher.encryptor()
-    # ciphertext = encryptor.update(plaintext.encode()) + encryptor.finalize()
 
     key = pbkdf2(
         digestmod=hashlib.sha256,

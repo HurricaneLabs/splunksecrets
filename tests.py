@@ -185,3 +185,35 @@ class TestSplunkSecrets(unittest.TestCase):
         ciphertext = splunksecrets.encrypt_new(splunk_secret1, plaintext1)
         plaintext2 = splunksecrets.decrypt(splunk_secret2, ciphertext)
         self.assertEqual(plaintext2, plaintext1)
+
+    def test_encrypt_with_text_type_secret(self):
+        ciphertext = splunksecrets.encrypt(splunk_secret.decode(), "temp1234")
+        self.assertEqual(ciphertext, "$1$n6g0W7F51ZAK")
+
+    def test_encrypt_new_with_text_type_secret(self):
+        ciphertext = splunksecrets.encrypt_new(
+            splunk_secret.decode(),
+            "temp1234",
+            iv=six.b("i5dKMGaSIRNpJty4")
+        )
+        self.assertEqual(ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g==")
+
+    def test_decrypt_with_binary_type_secret(self):
+        plaintext = splunksecrets.decrypt(splunk_secret.decode(), "$1$n6g0W7F51ZAK")
+        self.assertEqual(plaintext, "temp1234")
+
+    def test_encrypt_with_binary_type_input(self):
+        ciphertext = splunksecrets.encrypt(splunk_secret, six.b("temp1234"))
+        self.assertEqual(ciphertext, "$1$n6g0W7F51ZAK")
+
+    def test_encrypt_new_with_binary_type_input(self):
+        ciphertext = splunksecrets.encrypt_new(
+            splunk_secret,
+            six.b("temp1234"),
+            iv=six.b("i5dKMGaSIRNpJty4")
+        )
+        self.assertEqual(ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g==")
+
+    def test_decrypt_with_text_type_input(self):
+        plaintext = splunksecrets.decrypt(splunk_secret, six.b("$1$n6g0W7F51ZAK"))
+        self.assertEqual(plaintext, "temp1234")
