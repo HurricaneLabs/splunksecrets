@@ -17,7 +17,7 @@ setup(
     description="splunksecrets - Encrypt / Decrypt Splunk encrypted passwords",
     long_description=long_description,
     install_requires=[
-        "click",
+        "click>=8.0.0",
         "cryptography>=3.2",
         "pcrypt",
         "six>=1.12.0"
