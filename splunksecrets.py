@@ -227,11 +227,15 @@ def decrypt_phantom(private_key, secret_key, ciphertext, asset_id):
 
 def __ensure_binary(ctx, param, value):  # pragma: no cover
     # pylint: disable=unused-argument
+    if value is None and not param.required:
+        return None
     return six.ensure_binary(value)
 
 
 def __ensure_int(ctx, param, value):  # pragma: no cover
     # pylint: disable=unused-argument
+    if value is None and not param.required:
+        return None
     try:
         return int(value)
     except ValueError:
@@ -240,6 +244,8 @@ def __ensure_int(ctx, param, value):  # pragma: no cover
 
 def __ensure_text(ctx, param, value):  # pragma: no cover
     # pylint: disable=unused-argument
+    if value is None and not param.required:
+        return None
     return six.ensure_text(value)
 
 

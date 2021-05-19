@@ -1,7 +1,7 @@
 from setuptools import setup
 
 
-VERSION = "1.0.0rc1"
+VERSION = "1.0.0rc2"
 
 
 with open("README.rst", "r") as f:
