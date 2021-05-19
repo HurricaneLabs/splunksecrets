@@ -29,41 +29,36 @@ github:
 Usage
 -----
 
+As of version 1.0.0, splunksecrets is broken into subcommands for each
+operaton
+
 ::
 
-   usage: splunksecrets [-h] [--splunk-secret SPLUNK_SECRET]
-                    [--splunk-secret-text SPLUNK_SECRET_TEXT] [-D] [--new]
-                    [--nosalt] [--password PASSWORD]
+  Usage: splunksecrets [OPTIONS] COMMAND [ARGS]...
 
-   optional arguments:
-     -h, --help            show this help message and exit
-     --splunk-secret SPLUNK_SECRET
-     --splunk-secret-text SPLUNK_SECRET_TEXT
-     -D, --decrypt
-     -H, --hash-passwd
-     --new
-     --nosalt
-     --password PASSWORD
+  Options:
+    --help  Show this message and exit.
 
-- Use ``--new`` when encrypting/decrypting Splunk 7.2 secrets
-  (indicated by ``$7$``)
-- Use ``--nosalt`` when encrypting/decrypting Splunk pre-7.2 secrets that are
-  not hashed
-- Use ``--splunk-secret`` to specify a path to splunk.secret, or use the
-  ``SPLUNK_SECRET`` environment variable
-- Use ``--splunk-secret-text`` to specify ``splunk.secret`` contents on the
-  command line, or use the ``SPLUNK_SECRET_TEXT`` environment variable
-- Use ``--password`` to specify password to be encrypted/decrypted on the
-  command line, or use the ``PASSWORD`` environment variable
+  Commands:
+    phantom-decrypt        Usage: splunksecrets phantom-decrypt [OPTIONS]
+    phantom-encrypt        Usage: splunksecrets phantom-encrypt [OPTIONS]
+    splunk-decrypt         Usage: splunksecrets splunk-decrypt [OPTIONS]
+    splunk-encrypt         Usage: splunksecrets splunk-encrypt [OPTIONS]
+    splunk-hash-passwd     Usage: splunksecrets splunk-hash-passwd [OPTIONS]
+    splunk-legacy-decrypt  Usage: splunksecrets splunk-legacy-decrypt...
+    splunk-legacy-encrypt  Usage: splunksecrets splunk-legacy-encrypt...
 
-  - NOTE: when doing so, on \*nix or other platforms running bash-like
-    shells, you must escape the ``$`` in passwords, like so:
+You can find details of the usage of each subcommand by running the command
+followed by ``--help``.
 
-    ::
-
-        splunksecrets --splunk-secret-text ... --password \$1\$.....
-
-- Use ``--hash-password`` to generate a hash for $SPLUNK_HOME/etc/passwd
+- **phantom-encrypt** and **phantom-decrypt** are for interacting with
+  credentials stored in the Phantom database
+- **splunk-encrypt** and **splunk-decrypt** are for interacting with
+  credentials from Splunk 7.2 or newer
+- **splunk-legacy-encrypt** and **splunk-legacy-decrypt** are for interacting
+  with credentials from Splunk versions below 7.2
+- **splunk-hash-passwd** is for generating Splunk local user password hashes
+  for use in ``$SPLUNK_HOME/etc/passwd``
 
 Encryption Schemes
 ------------------
@@ -101,6 +96,22 @@ used as part of integrity verification. The iv, ciphertext, and tag (in
 that order) are concatenated, base64-encoded, and prepended with ``$7$``
 to produce the encrypted password seen in the configuration files.
 
+Phantom
+~~~~~~~
+
+Phantom stores encrypted credentials in it's internal database as part
+of the JSON blob in the ``configuration`` column of the asset table.
+These credentials are encrypted using AES256-CBC and are stored
+base64-encoded. A SHA256 hash is generated using the public modulus of
+the Phantom RSA private key (located at
+``/opt/phantom/keystore/private_key.pem``) concatenated with the
+Django ``SECRET_KEY`` (found in
+``/opt/phantom/www/phantom_ui/secret_key.py``) - this hash is used as
+the key for the AES encryption. A SHA1 hash is generated using the
+``id`` of the asset from the ``asset`` table - this hash is used as
+the initialization vector (``iv``) for the AES encryption. The password
+to be encrypted is padded using PKCS7 padding prior to encryption.
+
 Known Issues
 ------------
 
@@ -111,6 +122,15 @@ Known Issues
 
 Version History
 ---------------
+
+Version 1.0.0rc1 (2021-05-19)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- New CLI interface that breaks each operation into its own subcommand
+- CLI interface supports passing path to key files (splunk.secret,
+  private_key.pem, and secret_key.py) via arguments, or file contents
+  via environment variables
+- Add initial support for encryption/decryption of Phantom asset
+  credentials (thanks swoops)
 
 Version 0.5.0 (2020-06-23)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

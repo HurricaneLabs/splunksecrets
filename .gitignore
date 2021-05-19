@@ -66,3 +66,6 @@ splunk.secret
 .pytest_cache/**
 .venv-py27
 secret.gh*
+test_phantom_private_key.pem
+test_phantom_secret_key.py
+test_splunk.secret

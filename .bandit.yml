@@ -1,4 +1,5 @@
 ---
 tests:
 skips:
-    - B304
+    - B303  # MCM: Phantom uses SHA-1 to generate the IV
+    - B304  # MCM: Old-style Splunk encryption uses RC4
