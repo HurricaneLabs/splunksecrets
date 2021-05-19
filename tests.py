@@ -239,6 +239,3 @@ class TestSplunkSecrets(unittest.TestCase):
             asset_id
         )
         self.assertEqual(plaintext2, plaintext1)
-
-# temp1234
-# OQrukxVAW4Mh3otHINcyEg==
