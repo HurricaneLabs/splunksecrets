@@ -225,6 +225,77 @@ def decrypt_phantom(private_key, secret_key, ciphertext, asset_id):
     return unpadded_data.decode()
 
 
+def get_key_and_iv(password, salt, algorithm=hashes.MD5):
+    """
+    Python implementation of EVP_BytesToKey
+
+    Based on https://gist.github.com/tly1980/b6c2cc10bb35cb4446fb6ccf5ee5efbc
+    """
+    def mdf(data):
+        """Shortcut for hash using Cryptograph"""
+        digest = hashes.Hash(algorithm())
+        digest.update(data)
+        return digest.finalize()
+
+    keyiv = mdf(password + salt)
+    tmp = [keyiv]
+    while len(tmp) < 48:
+        tmp.append(mdf(tmp[-1] + password + salt))
+        keyiv += tmp[-1]
+    return keyiv[:32], keyiv[32:48]
+
+
+def decrypt_dbconnect(secret_key, ciphertext):
+    """Implement `openssl aes-256-cbc` encryption as used in dbconnect"""
+
+    # Get salt and actual ciphertext from input
+    ciphertext = base64.b64decode(ciphertext)
+    salt, ciphertext = ciphertext[8:16], ciphertext[16:]
+
+    # Use OpenSSL EVP_BytesToKey (with md5) to derive key and iv
+    key, iv = get_key_and_iv(secret_key, salt, algorithm=hashes.MD5)  # pylint: disable=invalid-name
+
+    # Decrypt
+    algorithm = algorithms.AES(key)
+    cipher = Cipher(algorithm, mode=modes.CBC(iv), backend=default_backend())
+    decryptor = cipher.decryptor()
+    plaintext = decryptor.update(ciphertext)
+
+    # Unpad the plaintext
+    unpadder = PKCS7(128).unpadder()
+    unpadded_data = unpadder.update(plaintext)
+    unpadded_data += unpadder.finalize()
+
+    # Return string result
+    return unpadded_data.decode()
+
+
+def encrypt_dbconnect(secret_key, plaintext, salt=None):
+    """Implement `openssl aes-256-cbc` decryption as used in dbconnect"""
+
+    # Use a random salt unless one is provided
+    if salt is None:
+        salt = os.urandom(8)
+
+    # Use OpenSSL EVP_BytesToKey (with md5) to derive key and iv
+    key, iv = get_key_and_iv(secret_key, salt, algorithm=hashes.MD5)  # pylint: disable=invalid-name
+
+    # Pad the plaintext to 16 bytes
+    plaintext = plaintext.encode()
+    padder = PKCS7(128).padder()
+    padded_data = padder.update(plaintext)
+    padded_data += padder.finalize()
+
+    # Encrypt
+    algorithm = algorithms.AES(key)
+    cipher = Cipher(algorithm, mode=modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+
+    # Base64 result
+    return base64.b64encode(b"Salted__" + salt + ciphertext).decode()
+
+
 def __ensure_binary(ctx, param, value):  # pragma: no cover
     # pylint: disable=unused-argument
     if value is None and not param.required:
@@ -288,8 +359,29 @@ def __load_splunk_secret(ctx, param, value):  # pragma: no cover
 
 
 @click.group()
-def main():  # pylint: disable=missing-function-docstring
+def main():  # pragma: no cover
+    # pylint: disable=missing-function-docstring
     pass
+
+
+@main.command("dbconnect-encrypt")
+@click.option("-S", "--secret", required=True, envvar="DBCONNECT_SECRET",
+              callback=__load_splunk_secret)
+@click.option("--password", envvar="PASSWORD", prompt=True, hide_input=True,
+              callback=__ensure_text)
+def dbconnect_encrypt(secret, password):  # pragma: no cover
+    """Encrypt password used for dbconnect identity"""
+    click.echo(encrypt_dbconnect(secret, password))
+
+
+@main.command("dbconnect-decrypt")
+@click.option("-S", "--secret", required=True, envvar="DBCONNECT_SECRET",
+              callback=__load_splunk_secret)
+@click.option("--ciphertext", envvar="PASSWORD", prompt=True,
+              callback=__ensure_text)
+def dbconnect_decrypt(secret, ciphertext):  # pragma: no cover
+    """Decrypt password used for dbconnect identity"""
+    click.echo(decrypt_dbconnect(secret, ciphertext))
 
 
 @main.command("phantom-encrypt")
@@ -302,16 +394,7 @@ def main():  # pylint: disable=missing-function-docstring
 @click.option("-A", "--asset-id", envvar="PHANTOM_ASSET_ID", prompt=True,
               callback=__ensure_int)
 def phantom_encrypt(private_key, secret_key, password, asset_id):  # pragma: no cover
-    """
-    Usage: splunksecrets phantom-encrypt [OPTIONS]
-
-    Options:
-    -P, --private-key TEXT  [required]
-    -S, --secret-key TEXT   [required]
-    --password TEXT
-    -A, --asset-id TEXT
-    --help                  Show this message and exit.
-    """
+    """Encrypt password used for Phantom asset"""
     click.echo(encrypt_phantom(private_key, secret_key, password, asset_id))
 
 
@@ -325,16 +408,7 @@ def phantom_encrypt(private_key, secret_key, password, asset_id):  # pragma: no 
 @click.option("-A", "--asset-id", envvar="PHANTOM_ASSET_ID", prompt=True,
               callback=__ensure_int)
 def phantom_decrypt(private_key, secret_key, ciphertext, asset_id):  # pragma: no cover
-    """
-    Usage: splunksecrets phantom-decrypt [OPTIONS]
-
-    Options:
-    -P, --private-key TEXT  [required]
-    -S, --secret-key TEXT   [required]
-    --ciphertext TEXT
-    -A, --asset-id TEXT
-    --help                  Show this message and exit.
-    """
+    """Decrypt password used for Phantom asset"""
     click.echo(decrypt_phantom(private_key, secret_key, ciphertext, asset_id))
 
 
@@ -346,15 +420,7 @@ def phantom_decrypt(private_key, secret_key, ciphertext, asset_id):  # pragma: n
               callback=__ensure_text)
 def splunk_encrypt(splunk_secret, password, iv=None):  # pragma: no cover
     # pylint: disable=invalid-name
-    """
-    Usage: splunksecrets splunk-encrypt [OPTIONS]
-
-    Options:
-    -S, --splunk-secret TEXT  [required]
-    -I, --iv TEXT
-    --password TEXT
-    --help                    Show this message and exit.
-    """
+    """Encrypt password using Splunk 7.2 algorithm"""
     click.echo(encrypt_new(splunk_secret, password, iv))
 
 
@@ -364,14 +430,7 @@ def splunk_encrypt(splunk_secret, password, iv=None):  # pragma: no cover
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True,
               callback=__ensure_text)
 def splunk_decrypt(splunk_secret, ciphertext):  # pragma: no cover
-    """
-    Usage: splunksecrets splunk-decrypt [OPTIONS]
-
-    Options:
-    -S, --splunk-secret TEXT  [required]
-    --ciphertext TEXT
-    --help                    Show this message and exit.
-    """
+    """Decrypt password using Splunk 7.2 algorithm"""
     click.echo(decrypt(splunk_secret, ciphertext))
 
 
@@ -382,15 +441,7 @@ def splunk_decrypt(splunk_secret, ciphertext):  # pragma: no cover
               callback=__ensure_text)
 @click.option("--no-salt/--salt", default=False)
 def splunk_legacy_encrypt(splunk_secret, password, no_salt):  # pragma: no cover
-    """
-    Usage: splunksecrets splunk-legacy-encrypt [OPTIONS]
-
-    Options:
-    -S, --splunk-secret TEXT  [required]
-    --password TEXT
-    --no-salt / --salt
-    --help                    Show this message and exit.
-    """
+    """Encrypt password using legacy Splunk algorithm (pre-7.2)"""
     click.echo(encrypt(splunk_secret, password, no_salt))
 
 
@@ -401,15 +452,7 @@ def splunk_legacy_encrypt(splunk_secret, password, no_salt):  # pragma: no cover
               callback=__ensure_text)
 @click.option("--no-salt/--salt/=", default=False)
 def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):  # pragma: no cover
-    """
-    Usage: splunksecrets splunk-legacy-decrypt [OPTIONS]
-
-    Options:
-    -S, --splunk-secret TEXT  [required]
-    --ciphertext TEXT
-    --no-salt / --salt/=
-    --help                    Show this message and exit.
-    """
+    """Decrypt password using legacy Splunk algorithm (pre-7.2)"""
     click.echo(decrypt(splunk_secret, ciphertext, no_salt))
 
 
@@ -417,11 +460,5 @@ def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):  # pragma: no cov
 @click.option("--password", envvar="PASSWORD", prompt=True, hide_input=True,
               callback=__ensure_text)
 def splunk_hash_passwd(password):  # pragma: no cover
-    """
-    Usage: splunksecrets splunk-hash-passwd [OPTIONS]
-
-    Options:
-    --password TEXT
-    --help           Show this message and exit.
-    """
+    """Generate password hash for use in $SPLUNK_HOME/etc/passwd"""
     click.echo(pcrypt.crypt(password))

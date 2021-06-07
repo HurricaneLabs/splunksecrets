@@ -72,6 +72,8 @@ ennUbapylEo4uLqjPlS64jYwbMIDMsn8UAkQT8Sx2ShwYwSdHsb2aE1tdj4=
 """.strip())
 phantom_secret = six.b("bhxiegi%@^76toslu+7olp2fx)taw%vcqoxlhlr27^ri3i41vt")
 
+dbconnect_secret = six.b("WeUSgc35gxALVesK01Z91MASQNl4E1NvYfmc5zC7KXI=")
+
 
 class TestSplunkSecrets(unittest.TestCase):
     def test_to_bytes(self):
@@ -237,5 +239,58 @@ class TestSplunkSecrets(unittest.TestCase):
             __phantom_secret,
             ciphertext,
             asset_id
+        )
+        self.assertEqual(plaintext2, plaintext1)
+
+    def test_get_key_and_iv_1(self):
+        key, iv = splunksecrets.get_key_and_iv(dbconnect_secret, six.b(" ") * 8)
+        self.assertEqual(
+            key,
+            six.b("\xd5\x7f\x00\xab\xb2\xaa\xbf\x9a\xab\x00\x9bH\x08\x14+\xd0"
+                  "\xf4d\xeb\xfa\xfc8\xa1J\x92v\xed\xed\x90X\xb4\x9c")
+        )
+        self.assertEqual(
+            iv,
+            six.b("\x1d\xd4\x97A\x06t\xc0\x9bv\xe78o\x84CwF")
+        )
+
+    def test_get_key_and_iv_2(self):
+        key, iv = splunksecrets.get_key_and_iv(dbconnect_secret, six.b("0") * 8)
+        self.assertEqual(
+            key,
+            six.b("Br\xc9\x08\xecL\x1b\t\x95\x12\xbc\x8c\xa4\xd8\xaf\x9f\x97w"
+                  "\x8dy\x8bS\xd2riJ\x07Ls\x04\x98\x9a")
+        )
+        self.assertEqual(
+            iv,
+            six.b('\xe9{w^\x8e{s\x81\xe3*\x02\x04\xf8j"\xcb')
+        )
+
+    def test_encrypt_dbconnect(self):
+        ciphertext = splunksecrets.encrypt_dbconnect(
+            dbconnect_secret,
+            "temp1234",
+            salt=six.b("saup)j99")
+        )
+        self.assertEqual(ciphertext, "U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c=")
+
+    def test_decrypt_dbconnect(self):
+        plaintext = splunksecrets.decrypt_dbconnect(
+            dbconnect_secret,
+            b"U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c="
+        )
+        self.assertEqual(plaintext, "temp1234")
+
+    def test_end_to_end_dbconnect(self):
+        __dbconnect_secret = base64.b64encode(os.urandom(32))
+
+        plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
+        ciphertext = splunksecrets.encrypt_dbconnect(
+            __dbconnect_secret,
+            plaintext1
+        )
+        plaintext2 = splunksecrets.decrypt_dbconnect(
+            __dbconnect_secret,
+            ciphertext
         )
         self.assertEqual(plaintext2, plaintext1)
