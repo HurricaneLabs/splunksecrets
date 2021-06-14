@@ -324,7 +324,7 @@ def __load_phantom_private_key(ctx, param, value):  # pragma: no cover
     # pylint: disable=unused-argument
     if ctx.get_parameter_source(param.name).name != "ENVIRONMENT":
         with open(value, "rb") as f:  # pylint: disable=invalid-name
-            value = f.read()
+            value = f.read().strip()
 
     # Validate the key loads
     serialization.load_pem_private_key(value, password=None)
@@ -338,7 +338,7 @@ def __load_phantom_secret_key(ctx, param, value):  # pragma: no cover
         return value
 
     with open(value, "rb") as f:  # pylint: disable=invalid-name
-        value = f.read()
+        value = f.read().strip()
     m = re.search(  # pylint: disable=invalid-name
         six.b(r"^SECRET_KEY = '(?P<secret_key>.+)'$"),
         value,
@@ -353,7 +353,7 @@ def __load_splunk_secret(ctx, param, value):  # pragma: no cover
     # pylint: disable=unused-argument
     if ctx.get_parameter_source(param.name).name != "ENVIRONMENT":
         with open(value, "rb") as f:  # pylint: disable=invalid-name
-            value = f.read()
+            value = f.read().strip()
 
     return value.strip()
 
