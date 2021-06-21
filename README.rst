@@ -35,18 +35,20 @@ operaton
 ::
 
   Usage: splunksecrets [OPTIONS] COMMAND [ARGS]...
-
+  
   Options:
     --help  Show this message and exit.
-
+  
   Commands:
-    phantom-decrypt        Usage: splunksecrets phantom-decrypt [OPTIONS]
-    phantom-encrypt        Usage: splunksecrets phantom-encrypt [OPTIONS]
-    splunk-decrypt         Usage: splunksecrets splunk-decrypt [OPTIONS]
-    splunk-encrypt         Usage: splunksecrets splunk-encrypt [OPTIONS]
-    splunk-hash-passwd     Usage: splunksecrets splunk-hash-passwd [OPTIONS]
-    splunk-legacy-decrypt  Usage: splunksecrets splunk-legacy-decrypt...
-    splunk-legacy-encrypt  Usage: splunksecrets splunk-legacy-encrypt...
+    dbconnect-decrypt      Decrypt password used for dbconnect identity
+    dbconnect-encrypt      Encrypt password used for dbconnect identity
+    phantom-decrypt        Decrypt password used for Phantom asset
+    phantom-encrypt        Encrypt password used for Phantom asset
+    splunk-decrypt         Decrypt password using Splunk 7.2 algorithm
+    splunk-encrypt         Encrypt password using Splunk 7.2 algorithm
+    splunk-hash-passwd     Generate password hash for use in...
+    splunk-legacy-decrypt  Decrypt password using legacy Splunk algorithm...
+    splunk-legacy-encrypt  Encrypt password using legacy Splunk algorithm...
 
 You can find details of the usage of each subcommand by running the command
 followed by ``--help``.
