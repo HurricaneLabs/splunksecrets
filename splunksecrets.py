@@ -42,7 +42,7 @@ def decrypt(secret, ciphertext, nosalt=False):
     if ciphertext.startswith("$1$"):
         ciphertext = b64decode(ciphertext[3:])
         if len(secret) < 16:
-            raise ValueError("secret too short, need 16 bytes, got %d" % len(secret))
+            raise ValueError(f"secret too short, need 16 bytes, got {len(secret)}")
         key = secret[:16]
 
         algorithm = algorithms.ARC4(key)
@@ -63,7 +63,7 @@ def decrypt(secret, ciphertext, nosalt=False):
         plaintext = "".join([six.unichr(c) for c in chars])
     elif ciphertext.startswith("$7$"):
         if len(secret) < 254:
-            raise ValueError("secret too short, need 254 bytes, got %d" % len(secret))
+            raise ValueError(f"secret too short, need 254 bytes, got {len(secret)}")
         ciphertext = b64decode(ciphertext[3:])
 
         kdf = PBKDF2HMAC(
@@ -90,7 +90,7 @@ def decrypt(secret, ciphertext, nosalt=False):
 def encrypt(secret, plaintext, nosalt=False):
     """Given the first 16 bytes of splunk.secret, encrypt a Splunk password"""
     if len(secret) < 16:
-        raise ValueError("secret too short, need 16 bytes, got %d" % len(secret))
+        raise ValueError(f"secret too short, need 16 bytes, got {len(secret)}")
 
     key = secret[:16]
 
@@ -112,14 +112,15 @@ def encrypt(secret, plaintext, nosalt=False):
     cipher = Cipher(algorithm, mode=None, backend=default_backend())
     encryptor = cipher.encryptor()
     ciphertext = encryptor.update(plaintext)
+    ciphertext = base64.b64encode(ciphertext).decode()
 
-    return "$1$%s" % base64.b64encode(ciphertext).decode()
+    return f"$1${ciphertext}"
 
 
 def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
     """Use the new AES 256 GCM encryption in Splunk 7.2"""
     if len(secret) < 254:
-        raise ValueError("secret too short, need 254 bytes, got %d" % len(secret))
+        raise ValueError(f"secret too short, need 254 bytes, got {len(secret)}")
 
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
@@ -137,8 +138,9 @@ def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
     cipher = Cipher(algorithm, mode=modes.GCM(iv), backend=default_backend())
     encryptor = cipher.encryptor()
     ciphertext = encryptor.update(plaintext.encode()) + encryptor.finalize()
+    payload = base64.b64encode(b"%s%s%s" % (iv, ciphertext, encryptor.tag)).decode()
 
-    return "$7$%s" % base64.b64encode(b"%s%s%s" % (iv, ciphertext, encryptor.tag)).decode()
+    return f"$7${payload}"
 
 
 def encrypt_phantom(private_key, secret_key, plaintext, asset_id):
@@ -310,7 +312,7 @@ def __ensure_int(ctx, param, value):  # pragma: no cover
     try:
         return int(value)
     except ValueError:
-        raise click.BadParameter("%s should be int" % param.name)  # pylint: disable=raise-missing-from
+        raise click.BadParameter(f"{param.name} should be int")  # pylint: disable=raise-missing-from
 
 
 def __ensure_text(ctx, param, value):  # pragma: no cover
