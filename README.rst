@@ -35,10 +35,10 @@ operaton
 ::
 
   Usage: splunksecrets [OPTIONS] COMMAND [ARGS]...
-  
+
   Options:
     --help  Show this message and exit.
-  
+
   Commands:
     dbconnect-decrypt      Decrypt password used for dbconnect identity
     dbconnect-encrypt      Encrypt password used for dbconnect identity
@@ -244,7 +244,7 @@ CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-.. |Build Status| image:: https://travis-ci.org/HurricaneLabs/splunksecrets.svg?branch=master
-   :target: https://travis-ci.org/HurricaneLabs/splunksecrets
+.. |Build Status| image:: https://github.com/HurricaneLabs/splunksecrets/actions/workflows/tests.yml/badge.svg
+   :target: https://github.com/HurricaneLabs/splunksecrets/actions/workflows/tests.yml
 .. |codecov.io| image:: https://codecov.io/gh/HurricaneLabs/splunksecrets/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/HurricaneLabs/splunksecrets
