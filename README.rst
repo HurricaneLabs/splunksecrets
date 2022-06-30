@@ -112,6 +112,11 @@ Known Issues
 Version History
 ---------------
 
+Version 0.5.1 (2022-06-29)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Allow passing the splunk secret itself as an environment variable 
+    ~ provided by chutzimir 
+
 Version 0.5.0 (2020-06-23)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Add support for passing a path to splunk.secret, the splunk.secret
