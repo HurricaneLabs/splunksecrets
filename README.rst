@@ -142,6 +142,7 @@ Known Issues
 Version History
 ---------------
 
+
 Version 1.0.0rc3 (2021-06-07)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Updated CLI command docstrings for proper help output
@@ -155,6 +156,12 @@ Version 1.0.0rc1 (2021-05-19)
   via environment variables
 - Add initial support for encryption/decryption of Phantom asset
   credentials (thanks swoops)
+
+Version 0.5.1 (2022-06-29)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Allow passing the splunk secret itself as an environment variable 
+    ~ provided by chutzimir 
+
 
 Version 0.5.0 (2020-06-23)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
