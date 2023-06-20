@@ -12,7 +12,7 @@ setup(
     name="splunksecrets",
     version=VERSION,
     author="Hurricane Labs",
-    author_email="dev@hurricanelabs.com",
+    author_email="splunk-app@hurricanelabs.com",
     py_modules=["splunksecrets"],
     description="splunksecrets - Encrypt / Decrypt Splunk encrypted passwords",
     long_description=long_description,
