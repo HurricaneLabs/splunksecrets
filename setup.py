@@ -1,7 +1,7 @@
 from setuptools import setup
 
 
-VERSION = "0.5.1"
+VERSION = "0.5.2"
 
 
 with open("README.rst", "r") as f:
@@ -11,8 +11,8 @@ with open("README.rst", "r") as f:
 setup(
     name="splunksecrets",
     version=VERSION,
-    author="Steve McMaster",
-    author_email="mcmaster@hurricanelabs.com",
+    author="Hurricane Labs",
+    author_email="dev@hurricanelabs.com",
     py_modules=["splunksecrets"],
     description="splunksecrets - Encrypt / Decrypt Splunk encrypted passwords",
     long_description=long_description,
