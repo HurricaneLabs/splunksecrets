@@ -105,10 +105,13 @@ class TestSplunkSecrets(unittest.TestCase):
         )
         self.assertEqual(ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g==")
 
-    def test_encrypt_new_raises_value_error_short_secret(self):
-        with self.assertRaises(ValueError):
-            splunk_secret = base64.b64encode(os.urandom(255))[:253]
-            splunksecrets.encrypt_new(splunk_secret, "temp1234")
+    def test_encrypt_new_pads_short_secret(self):
+        ciphertext = splunksecrets.encrypt_new(
+            splunk_secret[:30],
+            "short123",
+            iv=six.b("4KK0Ra8LWBKxUFQ8")
+        )
+        self.assertEqual(ciphertext, "$7$NEtLMFJhOExXQkt4VUZROK9vm0tDLbJn2jxESMRbs7MTdiHuTtBz8g==")
 
     def test_encrypt_character_matches_salt1(self):
         ciphertext = splunksecrets.encrypt(splunk_secret, "A" * 8)
