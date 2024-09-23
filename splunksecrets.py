@@ -63,7 +63,8 @@ def decrypt(secret, ciphertext, nosalt=False):
         plaintext = "".join([six.unichr(c) for c in chars])
     elif ciphertext.startswith("$7$"):
         if len(secret) < 254:
-            raise ValueError(f"secret too short, need 254 bytes, got {len(secret)}")
+            print(f'secret too short ({len(secret)} bytes), padding to 254 bytes with nulls')
+            secret = secret.ljust(254, b'\0')
         ciphertext = b64decode(ciphertext[3:])
 
         kdf = PBKDF2HMAC(
@@ -120,7 +121,8 @@ def encrypt(secret, plaintext, nosalt=False):
 def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
     """Use the new AES 256 GCM encryption in Splunk 7.2"""
     if len(secret) < 254:
-        raise ValueError(f"secret too short, need 254 bytes, got {len(secret)}")
+        print(f'secret too short ({len(secret)} bytes), padding to 254 bytes with nulls')
+        secret = secret.ljust(254, b'\0')
 
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
