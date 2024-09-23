@@ -98,7 +98,8 @@ for AES256-GCM, with a 16-byte randomly generated initialization vector.
 The encryption produces both the ciphertext as well as a "tag" that is
 used as part of integrity verification. The iv, ciphertext, and tag (in
 that order) are concatenated, base64-encoded, and prepended with ``$7$``
-to produce the encrypted password seen in the configuration files.
+to produce the encrypted password seen in the configuration files. If
+the key is less than 254-bytes it is padded with null bytes.
 
 Phantom
 ~~~~~~~
