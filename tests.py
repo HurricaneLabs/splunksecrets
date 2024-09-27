@@ -134,13 +134,13 @@ class TestSplunkSecrets(unittest.TestCase):
             splunk_secret = base64.b64encode(os.urandom(255))[:15]
             splunksecrets.decrypt(splunk_secret, "$1$n6g0W7F51ZAK")
 
-    def test_decrypt_raises_value_error_short_secret2(self):
-        with self.assertRaises(ValueError):
-            splunk_secret = base64.b64encode(os.urandom(255))[:253]
-            splunksecrets.decrypt(
-                splunk_secret,
-                "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g=="
-            )
+    def test_decrypt_pads_short_secret2(self):
+        plaintext = splunksecrets.decrypt(
+            splunk_secret[:30],
+            "$7$NEtLMFJhOExXQkt4VUZROK9vm0tDLbJn2jxESMRbs7MTdiHuTtBz8g=="
+        )
+        self.assertEqual(plaintext, "short123")
+
 
     def test_decrypt_nosalt(self):
         plaintext = splunksecrets.decrypt(splunk_secret, "$1$2+1yGuQ1gcMK", nosalt=True)
