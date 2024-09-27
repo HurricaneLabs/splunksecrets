@@ -141,7 +141,6 @@ class TestSplunkSecrets(unittest.TestCase):
         )
         self.assertEqual(plaintext, "short123")
 
-
     def test_decrypt_nosalt(self):
         plaintext = splunksecrets.decrypt(splunk_secret, "$1$2+1yGuQ1gcMK", nosalt=True)
         self.assertEqual(plaintext, "temp1234")
