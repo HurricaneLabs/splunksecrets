@@ -357,6 +357,8 @@ def __load_splunk_secret(ctx, param, value):  # pragma: no cover
     if ctx.get_parameter_source(param.name).name != "ENVIRONMENT":
         with open(value, "rb") as f:  # pylint: disable=invalid-name
             value = f.read().strip()
+    elif isinstance(value, str):
+        value = bytes(value, encoding="utf-8")
 
     return value.strip()
 
