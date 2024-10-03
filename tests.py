@@ -105,6 +105,14 @@ class TestSplunkSecrets(unittest.TestCase):
         )
         self.assertEqual(ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g==")
 
+    def test_encrypt_new_str_secret(self):
+        ciphertext = splunksecrets.encrypt_new(
+            "abc123",  # secret as a string (not bytes)
+            "strings are fine",
+            iv=six.b("zIDM0YmIgDQ2gMzk")
+        )
+        self.assertEqual(ciphertext, "$7$eklETTBZbUlnRFEyZ016a+2HMVEtbCAJkNb7RkVHdqZwZkVJyZ+HmTWlYJedFdR4")
+
     def test_encrypt_new_pads_short_secret(self):
         ciphertext = splunksecrets.encrypt_new(
             splunk_secret[:30],
