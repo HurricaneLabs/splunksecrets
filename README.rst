@@ -1,7 +1,7 @@
 splunksecrets - Encrypt and Decrypt Splunk Passwords
 ====================================================
 
-|Build Status| |codecov.io|
+|Build Status|
 
 ``splunksecrets`` is a tool for working with Splunk secrets offline. It
 currently supports encryption and decryption of passwords, but in the
@@ -142,9 +142,12 @@ Known Issues
 
 Version History
 ---------------
+Version 1.0.1
+~~~~~~~~~~~~~~
+- Short secrets are padded in the same way Splunk itself does it. Thanks to
+Matt Anderson for this contribution.
 
-
-Version 1.0.0rc3 (2021-06-07)
+Version 1.0.0 (2021-06-07)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Updated CLI command docstrings for proper help output
 - Add initial support for encryption/decrypt of Splunk DBConnect credentials
