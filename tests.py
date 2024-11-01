@@ -93,7 +93,7 @@ class TestSplunkSecrets(unittest.TestCase):
         self.assertEqual(ciphertext, "$1$2+1yGuQ1gcMK")
 
     def test_encrypt_raises_value_error_short_secret(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "^secret too short, need 16 bytes, got 15$"):
             splunk_secret = base64.b64encode(os.urandom(255))[:15]
             splunksecrets.encrypt(splunk_secret, "temp1234")
 
@@ -138,7 +138,7 @@ class TestSplunkSecrets(unittest.TestCase):
         self.assertEqual(plaintext, "temp1234")
 
     def test_decrypt_raises_value_error_short_secret1(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaisesRegex(ValueError, "^secret too short, need 16 bytes, got 15$"):
             splunk_secret = base64.b64encode(os.urandom(255))[:15]
             splunksecrets.decrypt(splunk_secret, "$1$n6g0W7F51ZAK")
 
