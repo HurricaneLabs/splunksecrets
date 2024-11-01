@@ -36,6 +36,3 @@ jobs:
           python -m pip install -U tox tox-gh-actions codecov
       - name: Test with tox
         run: tox
-      - uses: codecov/codecov-action@v2
-        with:
-          fail_ci_if_error: true
