@@ -11,6 +11,7 @@ import click
 import pcrypt
 import six
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -45,7 +46,7 @@ def decrypt(secret, ciphertext, nosalt=False):
             raise ValueError(f"secret too short, need 16 bytes, got {len(secret)}")
         key = secret[:16]
 
-        algorithm = algorithms.ARC4(key)
+        algorithm = ARC4(key)
         cipher = Cipher(algorithm, mode=None, backend=default_backend())
         decryptor = cipher.decryptor()
         plaintext = decryptor.update(ciphertext)
@@ -109,7 +110,7 @@ def encrypt(secret, plaintext, nosalt=False):
 
     plaintext = b"".join([six.int2byte(c) for c in chars])
 
-    algorithm = algorithms.ARC4(key)
+    algorithm = ARC4(key)
     cipher = Cipher(algorithm, mode=None, backend=default_backend())
     encryptor = cipher.encryptor()
     ciphertext = encryptor.update(plaintext)
