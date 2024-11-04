@@ -163,8 +163,8 @@ Version 1.0.0rc1 (2021-05-19)
 
 Version 0.5.1 (2022-06-29)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-- Allow passing the splunk secret itself as an environment variable 
-    ~ provided by chutzimir 
+- Allow passing the splunk secret itself as an environment variable
+    ~ provided by chutzimir
 
 
 Version 0.5.0 (2020-06-23)
@@ -257,5 +257,3 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 .. |Build Status| image:: https://github.com/HurricaneLabs/splunksecrets/actions/workflows/tests.yml/badge.svg
    :target: https://github.com/HurricaneLabs/splunksecrets/actions/workflows/tests.yml
-.. |codecov.io| image:: https://codecov.io/gh/HurricaneLabs/splunksecrets/branch/master/graph/badge.svg
-   :target: https://codecov.io/gh/HurricaneLabs/splunksecrets
