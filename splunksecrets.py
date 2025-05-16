@@ -468,3 +468,6 @@ def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):  # pragma: no cov
 def splunk_hash_passwd(password):  # pragma: no cover
     """Generate password hash for use in $SPLUNK_HOME/etc/passwd"""
     click.echo(pcrypt.crypt(password))
+
+if __name__ == "__main__":
+    main()
