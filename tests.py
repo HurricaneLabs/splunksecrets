@@ -276,30 +276,30 @@ class TestSplunkSecrets(unittest.TestCase):
             six.b('\xe9{w^\x8e{s\x81\xe3*\x02\x04\xf8j"\xcb')
         )
 
-    def test_encrypt_dbconnect(self):
-        ciphertext = splunksecrets.encrypt_dbconnect(
+    def test_encrypt_dbconnect_legacy(self):
+        ciphertext = splunksecrets.encrypt_dbconnect_legacy(
             dbconnect_secret,
             "temp1234",
             salt=six.b("saup)j99")
         )
         self.assertEqual(ciphertext, "U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c=")
 
-    def test_decrypt_dbconnect(self):
-        plaintext = splunksecrets.decrypt_dbconnect(
+    def test_decrypt_dbconnect_legacy(self):
+        plaintext = splunksecrets.decrypt_dbconnect_legacy(
             dbconnect_secret,
             b"U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c="
         )
         self.assertEqual(plaintext, "temp1234")
 
-    def test_end_to_end_dbconnect(self):
+    def test_end_to_end_dbconnect_legacy(self):
         __dbconnect_secret = base64.b64encode(os.urandom(32))
 
         plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
-        ciphertext = splunksecrets.encrypt_dbconnect(
+        ciphertext = splunksecrets.encrypt_dbconnect_legacy(
             __dbconnect_secret,
             plaintext1
         )
-        plaintext2 = splunksecrets.decrypt_dbconnect(
+        plaintext2 = splunksecrets.decrypt_dbconnect_legacy(
             __dbconnect_secret,
             ciphertext
         )

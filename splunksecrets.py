@@ -9,7 +9,6 @@ import struct
 
 import click
 import pcrypt
-import six
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
 from cryptography.hazmat.primitives import hashes, serialization
@@ -54,17 +53,19 @@ def decrypt(secret, ciphertext, nosalt=False):
         chars = []
         if nosalt is False:
             for char1, char2 in zip(plaintext[:-1], itertools.cycle("DEFAULTSA")):
-                if six.byte2int([char1]) == ord(char2):
-                    chars.append(six.byte2int([char1]))
+                if char1 == ord(char2):
+                    chars.append(char1)
                 else:
-                    chars.append(six.byte2int([char1]) ^ ord(char2))
+                    chars.append(char1 ^ ord(char2))
         else:
-            chars = [six.byte2int([char]) for char in plaintext[:-1]]
+            chars = plaintext[:-1]
 
-        plaintext = "".join([six.unichr(c) for c in chars])
+        plaintext = "".join([chr(c) for c in chars])
     elif ciphertext.startswith("$7$"):
         # pad secret to 254 bytes with nulls
-        secret = six.ensure_binary(secret).ljust(254, b"\0")
+        if isinstance(secret, str):
+            secret = secret.encode()
+        secret = secret.ljust(254, b"\0")
 
         ciphertext = b64decode(ciphertext[3:])
 
@@ -108,7 +109,7 @@ def encrypt(secret, plaintext, nosalt=False):
 
     chars.append(0)
 
-    plaintext = b"".join([six.int2byte(c) for c in chars])
+    plaintext = b"".join([bytes([c]) for c in chars])
 
     algorithm = ARC4(key)
     cipher = Cipher(algorithm, mode=None, backend=default_backend())
@@ -121,8 +122,11 @@ def encrypt(secret, plaintext, nosalt=False):
 
 def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
     """Use the new AES 256 GCM encryption in Splunk 7.2"""
+
+    if isinstance(secret, str):
     # pad secret to 254 bytes with nulls
-    secret = six.ensure_binary(secret).ljust(254, b"\0")
+        secret = secret.encode()
+    secret = secret.ljust(254, b"\0")
 
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
@@ -158,7 +162,8 @@ def encrypt_phantom(private_key, secret_key, plaintext, asset_id):
     )
 
     # Ensure the secret_key is bytes
-    secret_key = six.ensure_binary(secret_key)
+    if isinstance(secret_key, str):
+        secret_key = secret_key.encode()
 
     # Get SHA256(public_key_bytes + secret_key)
     digest = hashes.Hash(hashes.SHA256())
@@ -199,7 +204,8 @@ def decrypt_phantom(private_key, secret_key, ciphertext, asset_id):
     )
 
     # Ensure the secret_key is bytes
-    secret_key = six.ensure_binary(secret_key)
+    if isinstance(secret_key, str):
+        secret_key = secret_key.encode()
 
     # Get SHA256(public_key_bytes + secret_key)
     digest = hashes.Hash(hashes.SHA256())
@@ -249,8 +255,8 @@ def get_key_and_iv(password, salt, algorithm=hashes.MD5):
     return keyiv[:32], keyiv[32:48]
 
 
-def decrypt_dbconnect(secret_key, ciphertext):
-    """Implement `openssl aes-256-cbc` encryption as used in dbconnect"""
+def decrypt_dbconnect_legacy(secret_key, ciphertext):
+    """Implement `openssl aes-256-cbc` encryption as used in older versions of dbconnect"""
 
     # Get salt and actual ciphertext from input
     ciphertext = base64.b64decode(ciphertext)
@@ -274,8 +280,8 @@ def decrypt_dbconnect(secret_key, ciphertext):
     return unpadded_data.decode()
 
 
-def encrypt_dbconnect(secret_key, plaintext, salt=None):
-    """Implement `openssl aes-256-cbc` decryption as used in dbconnect"""
+def encrypt_dbconnect_legacy(secret_key, plaintext, salt=None):
+    """Implement `openssl aes-256-cbc` decryption as used in older versions of dbconnect"""
 
     # Use a random salt unless one is provided
     if salt is None:
@@ -304,7 +310,9 @@ def __ensure_binary(ctx, param, value):  # pragma: no cover
     # pylint: disable=unused-argument
     if value is None and not param.required:
         return None
-    return six.ensure_binary(value)
+    if isinstance(value, str):
+        value = value.encode()
+    return value
 
 
 def __ensure_int(ctx, param, value):  # pragma: no cover
@@ -321,7 +329,9 @@ def __ensure_text(ctx, param, value):  # pragma: no cover
     # pylint: disable=unused-argument
     if value is None and not param.required:
         return None
-    return six.ensure_text(value)
+    if isinstance(value, bytes):
+        value = value.decode()
+    return value
 
 
 def __load_phantom_private_key(ctx, param, value):  # pragma: no cover
@@ -344,7 +354,7 @@ def __load_phantom_secret_key(ctx, param, value):  # pragma: no cover
     with open(value, "rb") as f:  # pylint: disable=invalid-name
         value = f.read().strip()
     m = re.search(  # pylint: disable=invalid-name
-        six.b(r"^SECRET_KEY = '(?P<secret_key>.+)'$"),
+        bytes(r"^SECRET_KEY = '(?P<secret_key>.+)'$"),
         value,
         flags=re.MULTILINE
     )

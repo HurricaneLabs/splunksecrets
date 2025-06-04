@@ -19,8 +19,7 @@ setup(
     install_requires=[
         "click>=8.0.0",
         "cryptography>=43",
-        "pcrypt",
-        "six>=1.12.0"
+        "pcrypt"
     ],
     entry_points={
         "console_scripts": [

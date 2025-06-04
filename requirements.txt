@@ -1,3 +1,2 @@
 cryptography>=3.2
 pcrypt
-six>=1.12.0
