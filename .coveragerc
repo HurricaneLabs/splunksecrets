@@ -1,7 +1,0 @@
-[run]
-# branch = true
-source = splunksecrets
-
-[report]
-include = splunksecrets.py
-show_missing = true

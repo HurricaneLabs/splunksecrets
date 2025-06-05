@@ -59,7 +59,7 @@ def decrypt_dbconnect(secret_key, ciphertext):
         return decrypt_dbconnect_new(secret_key, ciphertext)
 
 def decrypt_dbconnect_new(secret_key, ciphertext):
-    """Implement `openssl aes-256-cbc` encryption as used in older versions of dbconnect"""
+    """Implement AES GCM decryption as used in newer versions of dbconnect"""
 
     # Get salt and actual ciphertext from input
     salt, iv, ciphertext = ciphertext[:16], ciphertext[16:28], ciphertext[28:]
