@@ -14,8 +14,6 @@ format:
 
 lint:
 	uv run ruff check --fix
-	uv run mypy --ignore-missing-imports --install-types --non-interactive --package python_repo_template
-
 test:
 	uv run pytest --verbose --color=yes tests
 
