@@ -35,6 +35,11 @@ def get_key_and_iv(password, salt, algorithm=hashes.MD5):
 
 
 def get_key(password, salt):
+    """
+    Derive a key from a password and salt using Scrypt.
+
+    Used in the new encryption algorithm.
+    """
     kdf = Scrypt(
         salt=salt,
         length=32,
@@ -47,6 +52,9 @@ def get_key(password, salt):
 
 
 def encrypt_dbconnect(secret_key, plaintext, salt=None, legacy=False):
+    """
+    Encrypt a plaintext password using the new or legacy algorithm.
+    """
     if legacy:
         return encrypt_dbconnect_legacy(secret_key, plaintext, salt)
     else:
@@ -54,6 +62,10 @@ def encrypt_dbconnect(secret_key, plaintext, salt=None, legacy=False):
 
 
 def decrypt_dbconnect(secret_key, ciphertext):
+    """
+    Based on whether or not the ciphertext starts with "Salted__",
+    run either the legacy or new decryption function.
+    """
     ciphertext = base64.b64decode(ciphertext)
 
     if ciphertext.startswith(b"Salted__"):
