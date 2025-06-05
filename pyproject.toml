@@ -8,6 +8,13 @@ dependencies = [
     "cryptography>=43",
     "pcrypt"
 ]
+authors = [
+  {name = "Steve McMaster"},
+  {name = "Cameron Schmidt"},
+]
+maintainers = [
+  {name = "Cameron Schmidt"}
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -19,10 +19,10 @@ You can install ``splunksecrets`` using ``uv``:
 
    uv tool install splunksecrets
 
-::
 
 Or with pip:
 
+::
    python -m pip install splunksecrets
 
 
@@ -137,8 +137,8 @@ DBConnect post ~3.12
 
 DBConnect now encrypts passwords using AES GCM with no padding.
 A random 16-byte salt is generated as well as a random 12-byte IV. The key is derived
-from the secret (stored in ``$SPLUNK_HOMEetc/apps/splunk_app_db_connect/certs/identity.dat``)
-and the salt using Scrypt. The final output is ``salt`` + ``iv`` + ``ciphertext``.
+from the salt and the secret (stored in ``$SPLUNK_HOMEetc/apps/splunk_app_db_connect/certs/identity.dat``)
+using Scrypt. The final output is ``salt`` + ``iv`` + ``ciphertext``.
 
 Known Issues
 ------------
@@ -253,7 +253,7 @@ License Info
 
 The MIT License (MIT)
 
-Copyright (c) 2020 Hurricane Labs LLC
+Copyright (c) 2025 Hurricane Labs LLC
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the
