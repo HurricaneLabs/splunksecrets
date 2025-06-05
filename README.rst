@@ -23,6 +23,7 @@ You can install ``splunksecrets`` using ``uv``:
 Or with pip:
 
 ::
+
    python -m pip install splunksecrets
 
 
