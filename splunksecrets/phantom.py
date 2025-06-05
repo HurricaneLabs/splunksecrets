@@ -12,7 +12,7 @@ def to_bytes(num, size, byte_order):
     fmt = ">" if byte_order.lower() == "big" else "<"
     fmt += "B" * int(size)
     num = bin(num)[2:].zfill(size * 8)
-    args = [int(num[i:i+8], 2) for i in range(0, len(num), 8)]
+    args = [int(num[i : i + 8], 2) for i in range(0, len(num), 8)]
 
     return struct.pack(fmt, *args)  # pylint: disable=no-member
 
@@ -24,9 +24,7 @@ def encrypt_phantom(private_key, secret_key, plaintext, asset_id):
     private_key = serialization.load_pem_private_key(private_key, password=None)
     public_key = private_key.public_key()
     public_key_bytes = to_bytes(
-        public_key.public_numbers().n,
-        int(public_key.key_size / 8),
-        byte_order="big"
+        public_key.public_numbers().n, int(public_key.key_size / 8), byte_order="big"
     )
 
     # Ensure the secret_key is bytes
@@ -66,9 +64,7 @@ def decrypt_phantom(private_key, secret_key, ciphertext, asset_id):
     private_key = serialization.load_pem_private_key(private_key, password=None)
     public_key = private_key.public_key()
     public_key_bytes = to_bytes(
-        public_key.public_numbers().n,
-        int(public_key.key_size / 8),
-        byte_order="big"
+        public_key.public_numbers().n, int(public_key.key_size / 8), byte_order="big"
     )
 
     # Ensure the secret_key is bytes

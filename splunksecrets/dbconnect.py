@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives.padding import PKCS7
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
+
 def get_key_and_iv(password, salt, algorithm=hashes.MD5):
     """
     Python implementation of EVP_BytesToKey
@@ -32,16 +33,18 @@ def get_key_and_iv(password, salt, algorithm=hashes.MD5):
         keyiv += tmp[-1]
     return keyiv[:32], keyiv[32:48]
 
+
 def get_key(password, salt):
     kdf = Scrypt(
         salt=salt,
         length=32,
-        n=32, # This is a low number of iterations, but it's what DBX uses...
+        n=32,  # This is a low number of iterations, but it's what DBX uses...
         r=8,
         p=1,
-        backend=default_backend()
+        backend=default_backend(),
     )
     return kdf.derive(password)
+
 
 def encrypt_dbconnect(secret_key, plaintext, salt=None, legacy=False):
     if legacy:
@@ -58,6 +61,7 @@ def decrypt_dbconnect(secret_key, ciphertext):
     else:
         return decrypt_dbconnect_new(secret_key, ciphertext)
 
+
 def decrypt_dbconnect_new(secret_key, ciphertext):
     """Implement AES GCM decryption as used in newer versions of dbconnect"""
 
@@ -66,10 +70,11 @@ def decrypt_dbconnect_new(secret_key, ciphertext):
 
     # Derive key using Scrypt
     key = get_key(secret_key, salt)
-    
+
     aesgcm = AESGCM(key)
     plaintext = aesgcm.decrypt(iv, ciphertext, None)
-    return plaintext.decode('utf-8')
+    return plaintext.decode("utf-8")
+
 
 def decrypt_dbconnect_legacy(secret_key, ciphertext):
     """Implement `openssl aes-256-cbc` encryption as used in older versions of dbconnect"""
@@ -94,6 +99,7 @@ def decrypt_dbconnect_legacy(secret_key, ciphertext):
     # Return string result
     return unpadded_data.decode()
 
+
 def encrypt_dbconnect_new(secret_key, plaintext, salt=None):
     """Implement `openssl aes-256-gcm` encryption as used in newer versions of dbconnect"""
     if salt is None:
@@ -101,16 +107,16 @@ def encrypt_dbconnect_new(secret_key, plaintext, salt=None):
 
     # Derive key using Scrypt
     key = get_key(secret_key, salt)
-    
+
     # Generate random IV
     iv = os.urandom(12)
-    
+
     aesgcm = AESGCM(key)
-    ciphertext = aesgcm.encrypt(iv, plaintext.encode('utf-8'), None)
-    
+    ciphertext = aesgcm.encrypt(iv, plaintext.encode("utf-8"), None)
+
     result = salt + iv + ciphertext
-    return base64.b64encode(result).decode('utf-8')
-    
+    return base64.b64encode(result).decode("utf-8")
+
 
 def encrypt_dbconnect_legacy(secret_key, plaintext, salt=None):
     """Implement `openssl aes-256-cbc` decryption as used in older versions of dbconnect"""

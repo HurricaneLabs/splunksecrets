@@ -15,5 +15,5 @@ __all__ = [
     "get_key_and_iv",
     "decrypt_phantom",
     "encrypt_phantom",
-    "to_bytes"
+    "to_bytes",
 ]

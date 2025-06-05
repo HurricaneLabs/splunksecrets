@@ -10,8 +10,6 @@ from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
 import splunksecrets
 
 
-
-
 splunk_secret = b"JX7cQAnH6Nznmild8MvfN8/BLQnGr8C3UYg3mqvc3ArFkaxj4gUt1RUCaRBD/r0CNn8xOA2oKX8/0uyyChyGRiFKhp6h2FA+ydNIRnN46N8rZov8QGkchmebZa5GAM5U50GbCCgzJFObPyWi5yT8CrSCYmv9cpRtpKyiX+wkhJwltoJzAxWbBERiLp+oXZnN3lsRn6YkljmYBqN9tZLTVVpsLvqvkezPgpv727Fd//5dRoWsWBv2zRp0mwDv3t\n"
 
 
@@ -77,7 +75,7 @@ class TestSplunkSecrets(unittest.TestCase):
     def test_to_bytes(self):
         self.assertEqual(
             splunksecrets.to_bytes(1234, 16, "big"),
-            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\xd2"
+            b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\xd2",
         )
 
     def test_encrypt(self):
@@ -89,33 +87,38 @@ class TestSplunkSecrets(unittest.TestCase):
         self.assertEqual(ciphertext, "$1$2+1yGuQ1gcMK")
 
     def test_encrypt_raises_value_error_short_secret(self):
-        with self.assertRaisesRegex(ValueError, "^secret too short, need 16 bytes, got 15$"):
+        with self.assertRaisesRegex(
+            ValueError, "^secret too short, need 16 bytes, got 15$"
+        ):
             splunk_secret = base64.b64encode(os.urandom(255))[:15]
             splunksecrets.encrypt(splunk_secret, "temp1234")
 
     def test_encrypt_new(self):
         ciphertext = splunksecrets.encrypt_new(
-            splunk_secret,
-            "temp1234",
-            iv=b"i5dKMGaSIRNpJty4"
+            splunk_secret, "temp1234", iv=b"i5dKMGaSIRNpJty4"
         )
-        self.assertEqual(ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g==")
+        self.assertEqual(
+            ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g=="
+        )
 
     def test_encrypt_new_str_secret(self):
         ciphertext = splunksecrets.encrypt_new(
             "abc123",  # secret as a string (not bytes)
             "strings are fine",
-            iv=b"zIDM0YmIgDQ2gMzk"
+            iv=b"zIDM0YmIgDQ2gMzk",
         )
-        self.assertEqual(ciphertext, "$7$eklETTBZbUlnRFEyZ016a+2HMVEtbCAJkNb7RkVHdqZwZkVJyZ+HmTWlYJedFdR4")
+        self.assertEqual(
+            ciphertext,
+            "$7$eklETTBZbUlnRFEyZ016a+2HMVEtbCAJkNb7RkVHdqZwZkVJyZ+HmTWlYJedFdR4",
+        )
 
     def test_encrypt_new_pads_short_secret(self):
         ciphertext = splunksecrets.encrypt_new(
-            splunk_secret[:30],
-            "short123",
-            iv=b"4KK0Ra8LWBKxUFQ8"
+            splunk_secret[:30], "short123", iv=b"4KK0Ra8LWBKxUFQ8"
         )
-        self.assertEqual(ciphertext, "$7$NEtLMFJhOExXQkt4VUZROK9vm0tDLbJn2jxESMRbs7MTdiHuTtBz8g==")
+        self.assertEqual(
+            ciphertext, "$7$NEtLMFJhOExXQkt4VUZROK9vm0tDLbJn2jxESMRbs7MTdiHuTtBz8g=="
+        )
 
     def test_encrypt_character_matches_salt1(self):
         ciphertext = splunksecrets.encrypt(splunk_secret, "A" * 8)
@@ -123,10 +126,15 @@ class TestSplunkSecrets(unittest.TestCase):
 
     def test_encrypt_character_matches_salt2(self):
         ciphertext = splunksecrets.encrypt(splunk_secret, "DEFAULTSA" * 8)
-        self.assertEqual(ciphertext, "$1$681ZK4BL5qRLsmMRT6EotpYVgOge69IZZhhxq0P+2ZBCaRTkci1IwiwRG9Ty2bHaSoG1p9QSXWIYA7mrYsyFqfWYqlvg+oQ+sg==")  # noqa: E501
+        self.assertEqual(
+            ciphertext,
+            "$1$681ZK4BL5qRLsmMRT6EotpYVgOge69IZZhhxq0P+2ZBCaRTkci1IwiwRG9Ty2bHaSoG1p9QSXWIYA7mrYsyFqfWYqlvg+oQ+sg==",
+        )  # noqa: E501
 
     def test_encrypt_phantom(self):
-        ciphertext = splunksecrets.encrypt_phantom(phantom_private_key, phantom_secret, "temp1234", 1234)
+        ciphertext = splunksecrets.encrypt_phantom(
+            phantom_private_key, phantom_secret, "temp1234", 1234
+        )
         self.assertEqual(ciphertext, "9Uzb3CO0PFFRUk0upbNvrA==")
 
     def test_decrypt(self):
@@ -134,14 +142,16 @@ class TestSplunkSecrets(unittest.TestCase):
         self.assertEqual(plaintext, "temp1234")
 
     def test_decrypt_raises_value_error_short_secret1(self):
-        with self.assertRaisesRegex(ValueError, "^secret too short, need 16 bytes, got 15$"):
+        with self.assertRaisesRegex(
+            ValueError, "^secret too short, need 16 bytes, got 15$"
+        ):
             splunk_secret = base64.b64encode(os.urandom(255))[:15]
             splunksecrets.decrypt(splunk_secret, "$1$n6g0W7F51ZAK")
 
     def test_decrypt_pads_short_secret2(self):
         plaintext = splunksecrets.decrypt(
             splunk_secret[:30],
-            "$7$NEtLMFJhOExXQkt4VUZROK9vm0tDLbJn2jxESMRbs7MTdiHuTtBz8g=="
+            "$7$NEtLMFJhOExXQkt4VUZROK9vm0tDLbJn2jxESMRbs7MTdiHuTtBz8g==",
         )
         self.assertEqual(plaintext, "short123")
 
@@ -151,34 +161,29 @@ class TestSplunkSecrets(unittest.TestCase):
 
     def test_decrypt_new(self):
         plaintext = splunksecrets.decrypt(
-            splunk_secret,
-            "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g=="
+            splunk_secret, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g=="
         )
         self.assertEqual(plaintext, "temp1234")
 
     def test_decrypt_character_matches_salt1(self):
-        plaintext = splunksecrets.decrypt(
-            splunk_secret,
-            "$1$qowYK8EKp+UK"
-        )
+        plaintext = splunksecrets.decrypt(splunk_secret, "$1$qowYK8EKp+UK")
         self.assertEqual(plaintext, "A" * 8)
 
     def test_decrypt_character_matches_salt2(self):
         plaintext = splunksecrets.decrypt(
             splunk_secret,
-            "$1$681ZK4BL5qRLsmMRT6EotpYVgOge69IZZhhxq0P+2ZBCaRTkci1IwiwRG9Ty2bHaSoG1p9QSXWIYA7mrYsyFqfWYqlvg+oQ+sg=="  # noqa: E501
+            "$1$681ZK4BL5qRLsmMRT6EotpYVgOge69IZZhhxq0P+2ZBCaRTkci1IwiwRG9Ty2bHaSoG1p9QSXWIYA7mrYsyFqfWYqlvg+oQ+sg==",  # noqa: E501
         )
         self.assertEqual(plaintext, "DEFAULTSA" * 8)
 
     def test_decrypt_unpadded_base64(self):
-        plaintext = splunksecrets.decrypt(
-            splunk_secret,
-            "$1$iqw4ag"
-        )
+        plaintext = splunksecrets.decrypt(splunk_secret, "$1$iqw4ag")
         self.assertEqual(plaintext, "aaa")
 
     def test_decrypt_phantom(self):
-        plaintext = splunksecrets.decrypt_phantom(phantom_private_key, phantom_secret, "9Uzb3CO0PFFRUk0upbNvrA==", 1234)
+        plaintext = splunksecrets.decrypt_phantom(
+            phantom_private_key, phantom_secret, "9Uzb3CO0PFFRUk0upbNvrA==", 1234
+        )
         self.assertEqual(plaintext, "temp1234")
 
     def test_end_to_end(self):
@@ -219,13 +224,12 @@ class TestSplunkSecrets(unittest.TestCase):
 
     def test_end_to_end_phantom(self):
         __phantom_private_key = generate_private_key(
-            public_exponent=65537,
-            key_size=2048
+            public_exponent=65537, key_size=2048
         )
         __phantom_private_key = __phantom_private_key.private_bytes(
             serialization.Encoding.PEM,
             serialization.PrivateFormat.TraditionalOpenSSL,
-            serialization.NoEncryption()
+            serialization.NoEncryption(),
         )
         chars = "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)"
 
@@ -235,16 +239,10 @@ class TestSplunkSecrets(unittest.TestCase):
 
         plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
         ciphertext = splunksecrets.encrypt_phantom(
-            __phantom_private_key,
-            __phantom_secret,
-            plaintext1,
-            asset_id
+            __phantom_private_key, __phantom_secret, plaintext1, asset_id
         )
         plaintext2 = splunksecrets.decrypt_phantom(
-            __phantom_private_key,
-            __phantom_secret,
-            ciphertext,
-            asset_id
+            __phantom_private_key, __phantom_secret, ciphertext, asset_id
         )
         self.assertEqual(plaintext2, plaintext1)
 
@@ -252,73 +250,57 @@ class TestSplunkSecrets(unittest.TestCase):
         key, iv = splunksecrets.get_key_and_iv(dbconnect_secret, b" " * 8)
         self.assertEqual(
             key,
-            b"\xd5\x7f\x00\xab\xb2\xaa\xbf\x9a\xab\x00\x9bH\x08\x14+\xd0\xf4d\xeb\xfa\xfc8\xa1J\x92v\xed\xed\x90X\xb4\x9c"
+            b"\xd5\x7f\x00\xab\xb2\xaa\xbf\x9a\xab\x00\x9bH\x08\x14+\xd0\xf4d\xeb\xfa\xfc8\xa1J\x92v\xed\xed\x90X\xb4\x9c",
         )
-        self.assertEqual(
-            iv,
-            b"\x1d\xd4\x97A\x06t\xc0\x9bv\xe78o\x84CwF"
-        )
+        self.assertEqual(iv, b"\x1d\xd4\x97A\x06t\xc0\x9bv\xe78o\x84CwF")
 
     def test_get_key_and_iv_2(self):
         key, iv = splunksecrets.get_key_and_iv(dbconnect_secret, b"0" * 8)
         self.assertEqual(
             key,
-            b"Br\xc9\x08\xecL\x1b\t\x95\x12\xbc\x8c\xa4\xd8\xaf\x9f\x97w\x8dy\x8bS\xd2riJ\x07Ls\x04\x98\x9a"
+            b"Br\xc9\x08\xecL\x1b\t\x95\x12\xbc\x8c\xa4\xd8\xaf\x9f\x97w\x8dy\x8bS\xd2riJ\x07Ls\x04\x98\x9a",
         )
-        self.assertEqual(
-            iv,
-            b'\xe9{w^\x8e{s\x81\xe3*\x02\x04\xf8j"\xcb'
-        )
+        self.assertEqual(iv, b'\xe9{w^\x8e{s\x81\xe3*\x02\x04\xf8j"\xcb')
 
     def test_encrypt_dbconnect_legacy(self):
         ciphertext = splunksecrets.encrypt_dbconnect(
-            dbconnect_secret,
-            "temp1234",
-            salt=b"saup)j99",
-            legacy=True
+            dbconnect_secret, "temp1234", salt=b"saup)j99", legacy=True
         )
         self.assertEqual(ciphertext, "U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c=")
 
     def test_encrypt_dbconnect(self):
         # Mock os.urandom so that IV is always the same
-        with patch('os.urandom', side_effect=lambda size: b'\x01' * size):
+        with patch("os.urandom", side_effect=lambda size: b"\x01" * size):
             ciphertext = splunksecrets.encrypt_dbconnect(
-                dbconnect_secret,
-                "temp1234",
-                salt=b"sixteenbytesalt.",
-                legacy=False
+                dbconnect_secret, "temp1234", salt=b"sixteenbytesalt.", legacy=False
             )
 
-        self.assertEqual(ciphertext, "c2l4dGVlbmJ5dGVzYWx0LgEBAQEBAQEBAQEBAV8SSOUDQd1NzcdSyxk+cU9xxBJNN8bJWg==")
+        self.assertEqual(
+            ciphertext,
+            "c2l4dGVlbmJ5dGVzYWx0LgEBAQEBAQEBAQEBAV8SSOUDQd1NzcdSyxk+cU9xxBJNN8bJWg==",
+        )
 
     def test_decrypt_dbconnect_legacy(self):
         plaintext = splunksecrets.decrypt_dbconnect(
-            dbconnect_secret,
-            b"U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c="
+            dbconnect_secret, b"U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c="
         )
         self.assertEqual(plaintext, "temp1234")
-
 
     def test_decrypt_dbconnect(self):
         plaintext = splunksecrets.decrypt_dbconnect(
             dbconnect_secret,
-            b"c2l4dGVlbmJ5dGVzYWx0LgEBAQEBAQEBAQEBAV8SSOUDQd1NzcdSyxk+cU9xxBJNN8bJWg=="
+            b"c2l4dGVlbmJ5dGVzYWx0LgEBAQEBAQEBAQEBAV8SSOUDQd1NzcdSyxk+cU9xxBJNN8bJWg==",
         )
         self.assertEqual(plaintext, "temp1234")
-    
+
     def test_end_to_end_dbconnect_legacy(self):
         __dbconnect_secret = base64.b64encode(os.urandom(32))
 
         plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
         ciphertext = splunksecrets.encrypt_dbconnect(
-            __dbconnect_secret,
-            plaintext1,
-            legacy=True
+            __dbconnect_secret, plaintext1, legacy=True
         )
-        plaintext2 = splunksecrets.decrypt_dbconnect(
-            __dbconnect_secret,
-            ciphertext
-        )
+        plaintext2 = splunksecrets.decrypt_dbconnect(__dbconnect_secret, ciphertext)
         self.assertEqual(plaintext2, plaintext1)
 
     def test_end_to_end_dbconnect(self):
@@ -326,12 +308,7 @@ class TestSplunkSecrets(unittest.TestCase):
 
         plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
         ciphertext = splunksecrets.encrypt_dbconnect(
-            __dbconnect_secret,
-            plaintext1,
-            legacy=False
+            __dbconnect_secret, plaintext1, legacy=False
         )
-        plaintext2 = splunksecrets.decrypt_dbconnect(
-            __dbconnect_secret,
-            ciphertext
-        )
+        plaintext2 = splunksecrets.decrypt_dbconnect(__dbconnect_secret, ciphertext)
         self.assertEqual(plaintext2, plaintext1)

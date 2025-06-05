@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 
+
 def b64decode(encoded):
     """Wrapper around `base64.b64decode` to add padding if necessary"""
     padding_len = 4 - (len(encoded) % 4)
@@ -15,8 +16,8 @@ def b64decode(encoded):
         encoded += "=" * padding_len
     return base64.b64decode(encoded)
 
+
 def decrypt(secret, ciphertext, nosalt=False):
-    
     """Given the first 16 bytes of splunk.secret, decrypt a Splunk password"""
     plaintext = None
 
@@ -55,7 +56,7 @@ def decrypt(secret, ciphertext, nosalt=False):
             length=32,
             salt=b"disk-encryption",
             iterations=1,
-            backend=default_backend()
+            backend=default_backend(),
         )
         key = kdf.derive(secret[:254])
 
@@ -105,7 +106,7 @@ def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
     """Use the new AES 256 GCM encryption in Splunk 7.2"""
 
     if isinstance(secret, str):
-    # pad secret to 254 bytes with nulls
+        # pad secret to 254 bytes with nulls
         secret = secret.encode()
     secret = secret.ljust(254, b"\0")
 
@@ -114,7 +115,7 @@ def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
         length=32,
         salt=b"disk-encryption",
         iterations=1,
-        backend=default_backend()
+        backend=default_backend(),
     )
     key = kdf.derive(secret[:254])
 
