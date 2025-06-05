@@ -239,6 +239,25 @@ def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):  # pragma: no cov
     """Decrypt password using legacy Splunk algorithm (pre-7.2)"""
     click.echo(decrypt(splunk_secret, ciphertext, no_salt))
 
+@main.command("dbconnect-legacy-encrypt")
+@click.option(
+    "-S",
+    "--secret",
+    required=True,
+    envvar="DBCONNECT_SECRET",
+    callback=__load_splunk_secret,
+)
+@click.option(
+    "--password",
+    envvar="PASSWORD",
+    prompt=True,
+    hide_input=True,
+    callback=__ensure_text,
+)
+def dbconnect_legacy_encrypt(secret, password):  # pragma: no cover
+    """Encrypt password used for dbconnect identity using legacy algorithm"""
+    click.echo(encrypt_dbconnect(secret, password, legacy=True))
+
 
 @main.command("splunk-hash-passwd")
 @click.option(
