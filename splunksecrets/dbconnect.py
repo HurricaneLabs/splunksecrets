@@ -95,7 +95,7 @@ def decrypt_dbconnect_legacy(secret_key, ciphertext):
     salt, ciphertext = ciphertext[8:16], ciphertext[16:]
 
     # Use OpenSSL EVP_BytesToKey (with md5) to derive key and iv
-    key, iv = get_key_and_iv(secret_key, salt, algorithm=hashes.MD5)  # pylint: disable=invalid-name
+    key, iv = get_key_and_iv(secret_key, salt, algorithm=hashes.MD5)
 
     # Decrypt
     algorithm = algorithms.AES(key)
@@ -138,7 +138,7 @@ def encrypt_dbconnect_legacy(secret_key, plaintext, salt=None):
         salt = os.urandom(8)
 
     # Use OpenSSL EVP_BytesToKey (with md5) to derive key and iv
-    key, iv = get_key_and_iv(secret_key, salt, algorithm=hashes.MD5)  # pylint: disable=invalid-name
+    key, iv = get_key_and_iv(secret_key, salt, algorithm=hashes.MD5)
 
     # Pad the plaintext to 16 bytes
     plaintext = plaintext.encode()

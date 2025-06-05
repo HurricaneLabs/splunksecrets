@@ -8,8 +8,7 @@ from .phantom import encrypt_phantom, decrypt_phantom
 from .splunk import encrypt, encrypt_new, decrypt
 
 
-def __ensure_binary(ctx, param, value):  # pragma: no cover
-    # pylint: disable=unused-argument
+def __ensure_binary(ctx, param, value):
     if value is None and not param.required:
         return None
     if isinstance(value, str):
@@ -17,18 +16,16 @@ def __ensure_binary(ctx, param, value):  # pragma: no cover
     return value
 
 
-def __ensure_int(ctx, param, value):  # pragma: no cover
-    # pylint: disable=unused-argument
+def __ensure_int(ctx, param, value):
     if value is None and not param.required:
         return None
     try:
         return int(value)
     except ValueError:
-        raise click.BadParameter(f"{param.name} should be int")  # pylint: disable=raise-missing-from
+        raise click.BadParameter(f"{param.name} should be int")
 
 
-def __ensure_text(ctx, param, value):  # pragma: no cover
-    # pylint: disable=unused-argument
+def __ensure_text(ctx, param, value):
     if value is None and not param.required:
         return None
     if isinstance(value, bytes):
@@ -36,10 +33,9 @@ def __ensure_text(ctx, param, value):  # pragma: no cover
     return value
 
 
-def __load_phantom_private_key(ctx, param, value):  # pragma: no cover
-    # pylint: disable=unused-argument
+def __load_phantom_private_key(ctx, param, value):
     if ctx.get_parameter_source(param.name).name != "ENVIRONMENT":
-        with open(value, "rb") as f:  # pylint: disable=invalid-name
+        with open(value, "rb") as f:
             value = f.read().strip()
 
     # Validate the key loads
@@ -48,14 +44,13 @@ def __load_phantom_private_key(ctx, param, value):  # pragma: no cover
     return value
 
 
-def __load_phantom_secret_key(ctx, param, value):  # pragma: no cover
-    # pylint: disable=unused-argument
+def __load_phantom_secret_key(ctx, param, value):
     if ctx.get_parameter_source(param.name).name == "ENVIRONMENT":
         return value
 
-    with open(value, "rb") as f:  # pylint: disable=invalid-name
+    with open(value, "rb") as f:
         value = f.read().strip()
-    m = re.search(  # pylint: disable=invalid-name
+    m = re.search(
         bytes(r"^SECRET_KEY = '(?P<secret_key>.+)'$"), value, flags=re.MULTILINE
     )
     if not m:
@@ -63,10 +58,9 @@ def __load_phantom_secret_key(ctx, param, value):  # pragma: no cover
     return m.groupdict()["secret_key"]
 
 
-def __load_splunk_secret(ctx, param, value):  # pragma: no cover
-    # pylint: disable=unused-argument
+def __load_splunk_secret(ctx, param, value):
     if ctx.get_parameter_source(param.name).name != "ENVIRONMENT":
-        with open(value, "rb") as f:  # pylint: disable=invalid-name
+        with open(value, "rb") as f: 
             value = f.read().strip()
     elif isinstance(value, str):
         value = bytes(value, encoding="utf-8")
@@ -75,8 +69,7 @@ def __load_splunk_secret(ctx, param, value):  # pragma: no cover
 
 
 @click.group()
-def main():  # pragma: no cover
-    # pylint: disable=missing-function-docstring
+def main():
     pass
 
 
@@ -95,7 +88,7 @@ def main():  # pragma: no cover
     hide_input=True,
     callback=__ensure_text,
 )
-def dbconnect_encrypt(secret, password):  # pragma: no cover
+def dbconnect_encrypt(secret, password):
     """Encrypt password used for dbconnect identity"""
     click.echo(encrypt_dbconnect(secret, password))
 
@@ -109,7 +102,7 @@ def dbconnect_encrypt(secret, password):  # pragma: no cover
     callback=__load_splunk_secret,
 )
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
-def dbconnect_decrypt(secret, ciphertext):  # pragma: no cover
+def dbconnect_decrypt(secret, ciphertext):
     """Decrypt password used for dbconnect identity"""
     click.echo(decrypt_dbconnect(secret, ciphertext))
 
@@ -139,7 +132,7 @@ def dbconnect_decrypt(secret, ciphertext):  # pragma: no cover
 @click.option(
     "-A", "--asset-id", envvar="PHANTOM_ASSET_ID", prompt=True, callback=__ensure_int
 )
-def phantom_encrypt(private_key, secret_key, password, asset_id):  # pragma: no cover
+def phantom_encrypt(private_key, secret_key, password, asset_id):
     """Encrypt password used for Phantom asset"""
     click.echo(encrypt_phantom(private_key, secret_key, password, asset_id))
 
@@ -163,7 +156,7 @@ def phantom_encrypt(private_key, secret_key, password, asset_id):  # pragma: no 
 @click.option(
     "-A", "--asset-id", envvar="PHANTOM_ASSET_ID", prompt=True, callback=__ensure_int
 )
-def phantom_decrypt(private_key, secret_key, ciphertext, asset_id):  # pragma: no cover
+def phantom_decrypt(private_key, secret_key, ciphertext, asset_id):
     """Decrypt password used for Phantom asset"""
     click.echo(decrypt_phantom(private_key, secret_key, ciphertext, asset_id))
 
@@ -184,8 +177,7 @@ def phantom_decrypt(private_key, secret_key, ciphertext, asset_id):  # pragma: n
     hide_input=True,
     callback=__ensure_text,
 )
-def splunk_encrypt(splunk_secret, password, iv=None):  # pragma: no cover
-    # pylint: disable=invalid-name
+def splunk_encrypt(splunk_secret, password, iv=None):
     """Encrypt password using Splunk 7.2 algorithm"""
     click.echo(encrypt_new(splunk_secret, password, iv))
 
@@ -199,7 +191,7 @@ def splunk_encrypt(splunk_secret, password, iv=None):  # pragma: no cover
     callback=__load_splunk_secret,
 )
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
-def splunk_decrypt(splunk_secret, ciphertext):  # pragma: no cover
+def splunk_decrypt(splunk_secret, ciphertext):
     """Decrypt password using Splunk 7.2 algorithm"""
     click.echo(decrypt(splunk_secret, ciphertext))
 
@@ -220,7 +212,7 @@ def splunk_decrypt(splunk_secret, ciphertext):  # pragma: no cover
     callback=__ensure_text,
 )
 @click.option("--no-salt/--salt", default=False)
-def splunk_legacy_encrypt(splunk_secret, password, no_salt):  # pragma: no cover
+def splunk_legacy_encrypt(splunk_secret, password, no_salt):
     """Encrypt password using legacy Splunk algorithm (pre-7.2)"""
     click.echo(encrypt(splunk_secret, password, no_salt))
 
@@ -235,7 +227,7 @@ def splunk_legacy_encrypt(splunk_secret, password, no_salt):  # pragma: no cover
 )
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 @click.option("--no-salt/--salt/=", default=False)
-def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):  # pragma: no cover
+def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):
     """Decrypt password using legacy Splunk algorithm (pre-7.2)"""
     click.echo(decrypt(splunk_secret, ciphertext, no_salt))
 
@@ -254,7 +246,7 @@ def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):  # pragma: no cov
     hide_input=True,
     callback=__ensure_text,
 )
-def dbconnect_legacy_encrypt(secret, password):  # pragma: no cover
+def dbconnect_legacy_encrypt(secret, password):
     """Encrypt password used for dbconnect identity using legacy algorithm"""
     click.echo(encrypt_dbconnect(secret, password, legacy=True))
 
@@ -267,6 +259,6 @@ def dbconnect_legacy_encrypt(secret, password):  # pragma: no cover
     hide_input=True,
     callback=__ensure_text,
 )
-def splunk_hash_passwd(password):  # pragma: no cover
+def splunk_hash_passwd(password):
     """Generate password hash for use in $SPLUNK_HOME/etc/passwd"""
     click.echo(pcrypt.crypt(password))

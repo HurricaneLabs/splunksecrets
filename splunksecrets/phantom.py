@@ -14,7 +14,7 @@ def to_bytes(num, size, byte_order):
     num = bin(num)[2:].zfill(size * 8)
     args = [int(num[i : i + 8], 2) for i in range(0, len(num), 8)]
 
-    return struct.pack(fmt, *args)  # pylint: disable=no-member
+    return struct.pack(fmt, *args)
 
 
 def encrypt_phantom(private_key, secret_key, plaintext, asset_id):
@@ -40,7 +40,7 @@ def encrypt_phantom(private_key, secret_key, plaintext, asset_id):
     # Get the iv from asset_id
     digest = hashes.Hash(hashes.SHA1())
     digest.update(str(asset_id).encode())
-    iv = digest.finalize()[:16]  # pylint: disable=invalid-name
+    iv = digest.finalize()[:16]
 
     # Pad the plaintext to 16 bytes
     plaintext = plaintext.encode()
@@ -80,7 +80,7 @@ def decrypt_phantom(private_key, secret_key, ciphertext, asset_id):
     # Get the iv from asset_id
     digest = hashes.Hash(hashes.SHA1())
     digest.update(str(asset_id).encode())
-    iv = digest.finalize()[:16]  # pylint: disable=invalid-name
+    iv = digest.finalize()[:16]
 
     # Decrypt
     algorithm = algorithms.AES(key)

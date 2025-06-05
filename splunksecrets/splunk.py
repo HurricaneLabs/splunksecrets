@@ -60,7 +60,7 @@ def decrypt(secret, ciphertext, nosalt=False):
         )
         key = kdf.derive(secret[:254])
 
-        iv = ciphertext[:16]  # pylint: disable=invalid-name
+        iv = ciphertext[:16]
         tag = ciphertext[-16:]
         ciphertext = ciphertext[16:-16]
 
@@ -102,7 +102,7 @@ def encrypt(secret, plaintext, nosalt=False):
     return f"$1${ciphertext}"
 
 
-def encrypt_new(secret, plaintext, iv=None):  # pylint: disable=invalid-name
+def encrypt_new(secret, plaintext, iv=None):
     """Use the new AES 256 GCM encryption in Splunk 7.2"""
 
     if isinstance(secret, str):
