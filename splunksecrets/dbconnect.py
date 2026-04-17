@@ -6,7 +6,9 @@ from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.padding import PKCS7
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+
 
 
 def get_key_and_iv(password, salt, algorithm=hashes.MD5):
@@ -154,3 +156,32 @@ def encrypt_dbconnect_legacy(secret_key, plaintext, salt=None):
 
     # Base64 result
     return base64.b64encode(b"Salted__" + salt + ciphertext).decode()
+
+
+def decrypt_dbconnect_fips(secret_key, ciphertext):
+    """
+    Decrypt a DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256.
+
+    This is used in environments where Scrypt is unavailable (e.g. FIPS mode).
+    The ciphertext blob layout is identical to decrypt_dbconnect_new, but key
+    derivation uses PBKDF2HMAC instead of Scrypt.
+    """
+    if isinstance(secret_key, bytes):
+        secret_key = secret_key.decode("utf-8")
+
+    blob = base64.b64decode(ciphertext)
+    salt, iv, data = blob[:16], blob[16:28], blob[28:]
+
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=32,
+    )
+    key = kdf.derive(secret_key.encode("utf-8"))
+
+    aesgcm = AESGCM(key)
+    plaintext = aesgcm.decrypt(iv, data, None)
+    return plaintext.decode("utf-8")
+
+
