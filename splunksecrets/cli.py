@@ -3,7 +3,7 @@ import pcrypt
 import re
 from cryptography.hazmat.primitives import serialization
 
-from .dbconnect import encrypt_dbconnect, decrypt_dbconnect
+from .dbconnect import encrypt_dbconnect, decrypt_dbconnect, decrypt_dbconnect_fips
 from .phantom import encrypt_phantom, decrypt_phantom
 from .splunk import encrypt, encrypt_new, decrypt
 
@@ -249,6 +249,20 @@ def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):
 def dbconnect_legacy_encrypt(secret, password):
     """Encrypt password used for dbconnect identity using legacy algorithm"""
     click.echo(encrypt_dbconnect(secret, password, legacy=True))
+
+
+@main.command("dbconnect-decrypt-fips")
+@click.option(
+    "-S",
+    "--secret",
+    required=True,
+    envvar="DBCONNECT_SECRET",
+    callback=__load_splunk_secret,
+)
+@click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
+def dbconnect_decrypt_fips(secret, ciphertext):
+    """Decrypt DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256"""
+    click.echo(decrypt_dbconnect_fips(secret, ciphertext))
 
 
 @main.command("splunk-hash-passwd")

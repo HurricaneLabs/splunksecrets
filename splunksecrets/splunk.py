@@ -3,7 +3,10 @@ import itertools
 import os
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+try:
+    from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+except ImportError:
+    from cryptography.hazmat.primitives.ciphers.algorithms import ARC4
 from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
