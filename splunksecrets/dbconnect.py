@@ -159,11 +159,11 @@ def encrypt_dbconnect_legacy(secret_key, plaintext, salt=None):
 
 def decrypt_dbconnect_fips(secret_key, ciphertext):
     """
-    Decrypt a DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256.
+    Decrypt a DB Connect password encrypted in FIPS mode.
 
-    This is used in environments where Scrypt is unavailable (e.g. FIPS mode).
-    The ciphertext blob layout is identical to decrypt_dbconnect_new, but key
-    derivation uses PBKDF2HMAC instead of Scrypt.
+    DB Connect running in FIPS mode derives the key with PBKDF2HMAC-SHA256
+    (32 iterations) instead of Scrypt, which isn't FIPS-approved. The
+    ciphertext blob layout is identical to decrypt_dbconnect_new.
     """
     if isinstance(secret_key, bytes):
         secret_key = secret_key.decode("utf-8")

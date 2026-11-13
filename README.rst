@@ -42,7 +42,8 @@ operaton
 
   Commands:
     dbconnect-decrypt           Decrypt password used for dbconnect identity
-    dbconnect-encrypt           Encrypt password used for dbconnect identity
+    dbconnect-decrypt-fips      Decrypt DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256
+    dbconnect-encrypt          Encrypt password used for dbconnect identity
     dbconnect-legacy-encrypt    Encrypt password used for dbconnect identity using legacy algorithm
     phantom-decrypt             Decrypt password used for Phantom asset
     phantom-encrypt             Encrypt password used for Phantom asset
@@ -57,6 +58,8 @@ followed by ``--help``.
 
 - **dbconnect-encrypt** and **dbconnect-decrypt** are for interacting with
   credentials stored in ``identities.conf`` in splunk_app_db_connect
+- **dbconnect-decrypt-fips** is for the same credentials when DB Connect runs
+  in FIPS mode
 - **phantom-encrypt** and **phantom-decrypt** are for interacting with
   credentials stored in the Phantom database
 - **splunk-encrypt** and **splunk-decrypt** are for interacting with
@@ -156,13 +159,21 @@ A random 16-byte salt is generated as well as a random 12-byte IV. The key is de
 from the salt and the secret (stored in ``$SPLUNK_HOMEetc/apps/splunk_app_db_connect/certs/identity.dat``)
 using Scrypt. The final output is ``salt`` + ``iv`` + ``ciphertext``.
 
+DBConnect in FIPS mode
+~~~~~~~~~~~~~~~~~~~~~~
+
+Scrypt isn't FIPS-approved, so DBConnect running in FIPS mode derives the key
+with ``PBKDF2`` (HMAC-SHA256, 32 iterations) instead. Everything else matches
+the post ~3.12 scheme: AES GCM, with an output of ``salt`` (16 bytes) + ``iv``
+(12 bytes) + ``ciphertext``. Use ``dbconnect-decrypt-fips`` for these passwords.
+
 Known Issues
 ------------
 
-- If the splunk secret and an encrypted password don't match, one of
-  two things will happen - either you'll get gibberish output, or a
-  Python traceback. At some point, we'll hopefully have better error
-  checking for this.
+- If the splunk secret and an encrypted password don't match, ``$7$`` and
+  ``$8$`` passwords fail with "wrong splunk.secret or corrupted value".
+  ``$1$`` (pre-7.2) passwords have no integrity check, so a mismatched secret
+  still produces gibberish output instead of an error.
 - DBConnect will occassionally store the ending newline from OpenSSL output in
   identities.conf, represented as a single ``\`` at the end of a line. This
   must be removed prior to passing encrypted passwords to ``splunksecrets``
