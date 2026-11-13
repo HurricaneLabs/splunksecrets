@@ -101,6 +101,18 @@ class TestSplunkSecrets(unittest.TestCase):
             ciphertext, "$7$aTVkS01HYVNJUk5wSnR5NKR+EdOfT4t84WSiXvPFHGHsfHtbgPIL3g=="
         )
 
+    def test_encrypt_v8(self):
+        ciphertext = splunksecrets.encrypt_v8(
+            splunk_secret,
+            "temp1234",
+            salt=b"MDEyMzQ1Njc4OWFiY2RlZg==",
+            iv=b"i5dKMGaSIRNpJty4",
+        )
+        self.assertEqual(
+            ciphertext,
+            "$8$MDEyMzQ1Njc4OWFiY2RlZg==$aTVkS01HYVNJUk5wSnR5NDNHe794F/8JF3BaZeU08b2XXLkn+cD4ZQ==",
+        )
+
     def test_encrypt_new_str_secret(self):
         ciphertext = splunksecrets.encrypt_new(
             "abc123",  # secret as a string (not bytes)
@@ -112,12 +124,36 @@ class TestSplunkSecrets(unittest.TestCase):
             "$7$eklETTBZbUlnRFEyZ016a+2HMVEtbCAJkNb7RkVHdqZwZkVJyZ+HmTWlYJedFdR4",
         )
 
+    def test_encrypt_v8_str_secret(self):
+        ciphertext = splunksecrets.encrypt_v8(
+            "abc123",  # secret as a string (not bytes)
+            "strings are fine",
+            salt=b"MDEyMzQ1Njc4OWFiY2RlZg==",
+            iv=b"zIDM0YmIgDQ2gMzk",
+        )
+        self.assertEqual(
+            ciphertext,
+            "$8$MDEyMzQ1Njc4OWFiY2RlZg==$eklETTBZbUlnRFEyZ016a9KBFAzdEiW92H17QmPn11A4zFhRlP13obpRhtI9Zm+5",
+        )
+
     def test_encrypt_new_pads_short_secret(self):
         ciphertext = splunksecrets.encrypt_new(
             splunk_secret[:30], "short123", iv=b"4KK0Ra8LWBKxUFQ8"
         )
         self.assertEqual(
             ciphertext, "$7$NEtLMFJhOExXQkt4VUZROK9vm0tDLbJn2jxESMRbs7MTdiHuTtBz8g=="
+        )
+
+    def test_encrypt_v8_pads_short_secret(self):
+        ciphertext = splunksecrets.encrypt_v8(
+            splunk_secret[:30],
+            "short123",
+            salt=b"MDEyMzQ1Njc4OWFiY2RlZg==",
+            iv=b"4KK0Ra8LWBKxUFQ8",
+        )
+        self.assertEqual(
+            ciphertext,
+            "$8$MDEyMzQ1Njc4OWFiY2RlZg==$NEtLMFJhOExXQkt4VUZROI10xX6S00wsY1D2wkc1P6RpaxsfP3YkhQ==",
         )
 
     def test_encrypt_character_matches_salt1(self):
@@ -165,6 +201,13 @@ class TestSplunkSecrets(unittest.TestCase):
         )
         self.assertEqual(plaintext, "temp1234")
 
+    def test_decrypt_v8(self):
+        plaintext = splunksecrets.decrypt(
+            splunk_secret,
+            "$8$MDEyMzQ1Njc4OWFiY2RlZg==$ZmVkY2JhOTg3NjU0MzIxMDjL37wc+qEGecEwOi+yxqnzHmRjijx6RA==",
+        )
+        self.assertEqual(plaintext, "temp1234")
+
     def test_decrypt_character_matches_salt1(self):
         plaintext = splunksecrets.decrypt(splunk_secret, "$1$qowYK8EKp+UK")
         self.assertEqual(plaintext, "A" * 8)
@@ -207,6 +250,13 @@ class TestSplunkSecrets(unittest.TestCase):
         plaintext2 = splunksecrets.decrypt(splunk_secret, ciphertext)
         self.assertEqual(plaintext2, plaintext1)
 
+    def test_end_to_end_v8(self):
+        splunk_secret = base64.b64encode(os.urandom(255))[:254]
+        plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
+        ciphertext = splunksecrets.encrypt_v8(splunk_secret, plaintext1)
+        plaintext2 = splunksecrets.decrypt(splunk_secret, ciphertext)
+        self.assertEqual(plaintext2, plaintext1)
+
     def test_end_to_end_character_matches_salt(self):
         splunk_secret = base64.b64encode(os.urandom(255))[:254]
         plaintext1 = "".join([random.choice("DEFAULTSA") for _ in range(24)])
@@ -219,6 +269,14 @@ class TestSplunkSecrets(unittest.TestCase):
         splunk_secret2 = splunk_secret1[:254]
         plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
         ciphertext = splunksecrets.encrypt_new(splunk_secret1, plaintext1)
+        plaintext2 = splunksecrets.decrypt(splunk_secret2, ciphertext)
+        self.assertEqual(plaintext2, plaintext1)
+
+    def test_encrypt_v8_and_decrypt_use_only_first_254(self):
+        splunk_secret1 = base64.b64encode(os.urandom(512))[:300]
+        splunk_secret2 = splunk_secret1[:254]
+        plaintext1 = base64.b64encode(os.urandom(255))[:24].decode()
+        ciphertext = splunksecrets.encrypt_v8(splunk_secret1, plaintext1)
         plaintext2 = splunksecrets.decrypt(splunk_secret2, ciphertext)
         self.assertEqual(plaintext2, plaintext1)
 

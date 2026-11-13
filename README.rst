@@ -103,6 +103,21 @@ that order) are concatenated, base64-encoded, and prepended with ``$7$``
 to produce the encrypted password seen in the configuration files. If
 the key is less than 254-bytes it is padded with null bytes.
 
+Splunk 10.6
+~~~~~~~~~~~
+
+Starting in Splunk 10.6, ``PBKDF2`` is replaced with ``HKDF`` as the key
+derivation function, and these secrets are indicated in configuration
+files by ``$8$`` in the encrypted password. The encryption key is still
+derived from all 254 bytes of ``splunk.secret`` (with the newline
+character still stripped), using a random 16-byte salt, and a static
+info string of ``disk-encryption-hkdf``. The AES256-GCM is performed in
+the same manner as the 7.2 encryption. The output is created by
+concatenating the prefix (``$8$``), base64-encoded HKDF salt, ``$`` as
+the field separator, and the base64-encoded AES payload (iv, ciphertext,
+and tag, in that order, with no separator). If the key is less than
+254-bytes it is padded with null bytes.
+
 Phantom
 ~~~~~~~
 

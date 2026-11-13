@@ -5,6 +5,7 @@ import os
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
 from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 
@@ -60,6 +61,32 @@ def decrypt(secret, ciphertext, nosalt=False):
         )
         key = kdf.derive(secret[:254])
 
+        iv = ciphertext[:16]
+        tag = ciphertext[-16:]
+        ciphertext = ciphertext[16:-16]
+
+        algorithm = algorithms.AES(key)
+        cipher = Cipher(algorithm, mode=modes.GCM(iv, tag), backend=default_backend())
+        decryptor = cipher.decryptor()
+        plaintext = decryptor.update(ciphertext).decode()
+    elif ciphertext.startswith("$8$"):
+        # pad secret to 254 bytes with nulls
+        if isinstance(secret, str):
+            secret = secret.encode()
+        secret = secret.ljust(254, b"\0")
+
+        _, _, b64salt, b64ciphertext = ciphertext.split("$")
+
+        kdf = HKDF(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=b64decode(b64salt),
+            info=b"disk-encryption-hkdf",
+            backend=default_backend(),
+        )
+        key = kdf.derive(secret[:254])
+
+        ciphertext = b64decode(b64ciphertext)
         iv = ciphertext[:16]
         tag = ciphertext[-16:]
         ciphertext = ciphertext[16:-16]
@@ -129,3 +156,38 @@ def encrypt_new(secret, plaintext, iv=None):
     payload = base64.b64encode(b"%s%s%s" % (iv, ciphertext, encryptor.tag)).decode()
 
     return f"$7${payload}"
+
+
+def encrypt_v8(secret, plaintext, salt=None, iv=None):
+    """Use the new(er) FIPS-friendly AES 256 GCM encryption in Splunk 10.6"""
+
+    if isinstance(secret, str):
+        # pad secret to 254 bytes with nulls
+        secret = secret.encode()
+    secret = secret.ljust(254, b"\0")
+
+    if salt is None:
+        salt = os.urandom(16)
+    else:
+        salt = base64.b64decode(salt)
+
+    kdf = HKDF(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        info=b"disk-encryption-hkdf",
+        backend=default_backend(),
+    )
+    key = kdf.derive(secret[:254])
+    salt = base64.b64encode(salt).decode()
+
+    if iv is None:
+        iv = os.urandom(16)
+
+    algorithm = algorithms.AES(key)
+    cipher = Cipher(algorithm, mode=modes.GCM(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(plaintext.encode()) + encryptor.finalize()
+    payload = base64.b64encode(b"%s%s%s" % (iv, ciphertext, encryptor.tag)).decode()
+
+    return f"$8${salt}${payload}"
