@@ -1,11 +1,18 @@
+import binascii
+import re
+
 import click
 import pcrypt
-import re
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives import serialization
 
-from .dbconnect import encrypt_dbconnect, decrypt_dbconnect, decrypt_dbconnect_fips
-from .phantom import encrypt_phantom, decrypt_phantom
-from .splunk import encrypt, encrypt_new, decrypt
+from .dbconnect import decrypt_dbconnect, decrypt_dbconnect_fips, encrypt_dbconnect
+from .phantom import decrypt_phantom, encrypt_phantom
+from .splunk import decrypt, encrypt, encrypt_new
+
+DBCONNECT_DECRYPT_FAILED = (
+    "decryption failed: wrong DB Connect secret or corrupted value"
+)
 
 
 def __ensure_binary(ctx, param, value):
@@ -60,7 +67,7 @@ def __load_phantom_secret_key(ctx, param, value):
 
 def __load_splunk_secret(ctx, param, value):
     if ctx.get_parameter_source(param.name).name != "ENVIRONMENT":
-        with open(value, "rb") as f: 
+        with open(value, "rb") as f:
             value = f.read().strip()
     elif isinstance(value, str):
         value = bytes(value, encoding="utf-8")
@@ -104,7 +111,17 @@ def dbconnect_encrypt(secret, password):
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 def dbconnect_decrypt(secret, ciphertext):
     """Decrypt password used for dbconnect identity"""
-    click.echo(decrypt_dbconnect(secret, ciphertext))
+    try:
+        plaintext = decrypt_dbconnect(secret, ciphertext)
+    except binascii.Error as e:
+        # a ValueError too, so catch it first: bad input, not a wrong secret
+        raise click.ClickException(
+            f"malformed ciphertext: not valid base64 ({e})"
+        ) from e
+    except (InvalidTag, ValueError) as e:
+        # GCM fails with InvalidTag; CBC with bad padding or undecodable text
+        raise click.ClickException(DBCONNECT_DECRYPT_FAILED) from e
+    click.echo(plaintext)
 
 
 @main.command("phantom-encrypt")
@@ -179,7 +196,11 @@ def phantom_decrypt(private_key, secret_key, ciphertext, asset_id):
 )
 def splunk_encrypt(splunk_secret, password, iv=None):
     """Encrypt password using Splunk 7.2 algorithm"""
-    click.echo(encrypt_new(splunk_secret, password, iv))
+    try:
+        ciphertext = encrypt_new(splunk_secret, password, iv)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+    click.echo(ciphertext)
 
 
 @main.command("splunk-decrypt")
@@ -193,7 +214,11 @@ def splunk_encrypt(splunk_secret, password, iv=None):
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 def splunk_decrypt(splunk_secret, ciphertext):
     """Decrypt password using Splunk 7.2 algorithm"""
-    click.echo(decrypt(splunk_secret, ciphertext))
+    try:
+        plaintext = decrypt(splunk_secret, ciphertext)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+    click.echo(plaintext)
 
 
 @main.command("splunk-legacy-encrypt")
@@ -229,7 +254,12 @@ def splunk_legacy_encrypt(splunk_secret, password, no_salt):
 @click.option("--no-salt/--salt/=", default=False)
 def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):
     """Decrypt password using legacy Splunk algorithm (pre-7.2)"""
-    click.echo(decrypt(splunk_secret, ciphertext, no_salt))
+    try:
+        plaintext = decrypt(splunk_secret, ciphertext, no_salt)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+    click.echo(plaintext)
+
 
 @main.command("dbconnect-legacy-encrypt")
 @click.option(
@@ -261,8 +291,16 @@ def dbconnect_legacy_encrypt(secret, password):
 )
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 def dbconnect_decrypt_fips(secret, ciphertext):
-    """Decrypt DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256"""
-    click.echo(decrypt_dbconnect_fips(secret, ciphertext))
+    """Decrypt DB Connect password encrypted in FIPS mode"""
+    try:
+        plaintext = decrypt_dbconnect_fips(secret, ciphertext)
+    except binascii.Error as e:
+        raise click.ClickException(
+            f"malformed ciphertext: not valid base64 ({e})"
+        ) from e
+    except (InvalidTag, ValueError) as e:
+        raise click.ClickException(DBCONNECT_DECRYPT_FAILED) from e
+    click.echo(plaintext)
 
 
 @main.command("splunk-hash-passwd")

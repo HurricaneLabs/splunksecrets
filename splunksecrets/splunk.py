@@ -2,15 +2,13 @@ import base64
 import itertools
 import os
 
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.backends import default_backend
-try:
-    from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
-except ImportError:
-    from cryptography.hazmat.primitives.ciphers.algorithms import ARC4
-from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
+from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
 
 
 def b64decode(encoded):
@@ -21,10 +19,36 @@ def b64decode(encoded):
     return base64.b64decode(encoded)
 
 
+def decrypt_gcm(key: bytes, payload: bytes) -> str:
+    """Decrypt an AES-256-GCM `iv + ciphertext + tag` payload, checking the tag.
+
+    Raises:
+        ValueError: The payload is too short, or the tag doesn't match, which
+            means the wrong splunk.secret or a corrupted value.
+    """
+    if len(payload) < 32:
+        raise ValueError("malformed ciphertext: too short to hold an iv and a tag")
+
+    iv = payload[:16]
+    tag = payload[-16:]
+    ciphertext = payload[16:-16]
+
+    algorithm = algorithms.AES(key)
+    cipher = Cipher(algorithm, mode=modes.GCM(iv, tag), backend=default_backend())
+    decryptor = cipher.decryptor()
+    try:
+        # finalize() checks the tag; decode only after it passes, or a wrong
+        # secret surfaces as a UnicodeDecodeError instead
+        plaintext = decryptor.update(ciphertext) + decryptor.finalize()
+    except InvalidTag:
+        raise ValueError(
+            "decryption failed: wrong splunk.secret or corrupted value"
+        ) from None
+    return plaintext.decode()
+
+
 def decrypt(secret, ciphertext, nosalt=False):
     """Given the first 16 bytes of splunk.secret, decrypt a Splunk password"""
-    plaintext = None
-
     if ciphertext.startswith("$1$"):
         ciphertext = b64decode(ciphertext[3:])
         if len(secret) < 16:
@@ -64,21 +88,17 @@ def decrypt(secret, ciphertext, nosalt=False):
         )
         key = kdf.derive(secret[:254])
 
-        iv = ciphertext[:16]
-        tag = ciphertext[-16:]
-        ciphertext = ciphertext[16:-16]
-
-        algorithm = algorithms.AES(key)
-        cipher = Cipher(algorithm, mode=modes.GCM(iv, tag), backend=default_backend())
-        decryptor = cipher.decryptor()
-        plaintext = decryptor.update(ciphertext).decode()
+        plaintext = decrypt_gcm(key, ciphertext)
     elif ciphertext.startswith("$8$"):
         # pad secret to 254 bytes with nulls
         if isinstance(secret, str):
             secret = secret.encode()
         secret = secret.ljust(254, b"\0")
 
-        _, _, b64salt, b64ciphertext = ciphertext.split("$")
+        parts = ciphertext.split("$")
+        if len(parts) != 4:
+            raise ValueError("malformed $8$ value: expected $8$<salt>$<payload>")
+        _, _, b64salt, b64ciphertext = parts
 
         kdf = HKDF(
             algorithm=hashes.SHA256(),
@@ -89,15 +109,11 @@ def decrypt(secret, ciphertext, nosalt=False):
         )
         key = kdf.derive(secret[:254])
 
-        ciphertext = b64decode(b64ciphertext)
-        iv = ciphertext[:16]
-        tag = ciphertext[-16:]
-        ciphertext = ciphertext[16:-16]
-
-        algorithm = algorithms.AES(key)
-        cipher = Cipher(algorithm, mode=modes.GCM(iv, tag), backend=default_backend())
-        decryptor = cipher.decryptor()
-        plaintext = decryptor.update(ciphertext).decode()
+        plaintext = decrypt_gcm(key, b64decode(b64ciphertext))
+    else:
+        raise ValueError(
+            "unknown ciphertext format: expected a value starting with $1$, $7$ or $8$"
+        )
 
     return plaintext
 
@@ -151,6 +167,8 @@ def encrypt_new(secret, plaintext, iv=None):
 
     if iv is None:
         iv = os.urandom(16)
+    elif len(iv) != 16:
+        raise ValueError(f"iv must be 16 bytes, got {len(iv)}")
 
     algorithm = algorithms.AES(key)
     cipher = Cipher(algorithm, mode=modes.GCM(iv), backend=default_backend())
@@ -162,7 +180,11 @@ def encrypt_new(secret, plaintext, iv=None):
 
 
 def encrypt_v8(secret, plaintext, salt=None, iv=None):
-    """Use the new(er) FIPS-friendly AES 256 GCM encryption in Splunk 10.6"""
+    """Use the new(er) FIPS-friendly AES 256 GCM encryption in Splunk 10.6
+
+    `salt` and `iv` are raw 16-byte values (not base64); random ones are used
+    when omitted.
+    """
 
     if isinstance(secret, str):
         # pad secret to 254 bytes with nulls
@@ -171,8 +193,12 @@ def encrypt_v8(secret, plaintext, salt=None, iv=None):
 
     if salt is None:
         salt = os.urandom(16)
-    else:
-        salt = base64.b64decode(salt)
+    elif not isinstance(salt, bytes):
+        raise TypeError(
+            f"salt must be 16 raw bytes (not base64), got {type(salt).__name__}"
+        )
+    elif len(salt) != 16:
+        raise ValueError(f"salt must be 16 bytes, got {len(salt)}")
 
     kdf = HKDF(
         algorithm=hashes.SHA256(),
@@ -186,6 +212,8 @@ def encrypt_v8(secret, plaintext, salt=None, iv=None):
 
     if iv is None:
         iv = os.urandom(16)
+    elif len(iv) != 16:
+        raise ValueError(f"iv must be 16 bytes, got {len(iv)}")
 
     algorithm = algorithms.AES(key)
     cipher = Cipher(algorithm, mode=modes.GCM(iv), backend=default_backend())
