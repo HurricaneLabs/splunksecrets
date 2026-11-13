@@ -180,7 +180,11 @@ def phantom_decrypt(private_key, secret_key, ciphertext, asset_id):
 )
 def splunk_encrypt(splunk_secret, password, iv=None):
     """Encrypt password using Splunk 7.2 algorithm"""
-    click.echo(encrypt_new(splunk_secret, password, iv))
+    try:
+        ciphertext = encrypt_new(splunk_secret, password, iv)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+    click.echo(ciphertext)
 
 
 @main.command("splunk-decrypt")
@@ -194,7 +198,11 @@ def splunk_encrypt(splunk_secret, password, iv=None):
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 def splunk_decrypt(splunk_secret, ciphertext):
     """Decrypt password using Splunk 7.2 algorithm"""
-    click.echo(decrypt(splunk_secret, ciphertext))
+    try:
+        plaintext = decrypt(splunk_secret, ciphertext)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+    click.echo(plaintext)
 
 
 @main.command("splunk-legacy-encrypt")
@@ -230,7 +238,11 @@ def splunk_legacy_encrypt(splunk_secret, password, no_salt):
 @click.option("--no-salt/--salt/=", default=False)
 def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):
     """Decrypt password using legacy Splunk algorithm (pre-7.2)"""
-    click.echo(decrypt(splunk_secret, ciphertext, no_salt))
+    try:
+        plaintext = decrypt(splunk_secret, ciphertext, no_salt)
+    except ValueError as e:
+        raise click.ClickException(str(e)) from e
+    click.echo(plaintext)
 
 
 @main.command("dbconnect-legacy-encrypt")

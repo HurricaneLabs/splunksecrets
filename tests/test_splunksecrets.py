@@ -4,10 +4,15 @@ import random
 import unittest
 from unittest.mock import patch
 
-from cryptography.hazmat.primitives import serialization
+from click.testing import CliRunner
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 import splunksecrets
+from splunksecrets.cli import main
+from splunksecrets.dbconnect import decrypt_dbconnect_fips
 
 splunk_secret = b"JX7cQAnH6Nznmild8MvfN8/BLQnGr8C3UYg3mqvc3ArFkaxj4gUt1RUCaRBD/r0CNn8xOA2oKX8/0uyyChyGRiFKhp6h2FA+ydNIRnN46N8rZov8QGkchmebZa5GAM5U50GbCCgzJFObPyWi5yT8CrSCYmv9cpRtpKyiX+wkhJwltoJzAxWbBERiLp+oXZnN3lsRn6YkljmYBqN9tZLTVVpsLvqvkezPgpv727Fd//5dRoWsWBv2zRp0mwDv3t\n"
 
@@ -69,6 +74,24 @@ phantom_secret = b"bhxiegi%@^76toslu+7olp2fx)taw%vcqoxlhlr27^ri3i41vt"
 
 dbconnect_secret = b"WeUSgc35gxALVesK01Z91MASQNl4E1NvYfmc5zC7KXI="
 
+# Real values from Splunk 10.6.1 and 10.4.1 installs; both decrypt to "temp1234"
+splunk_10_6_secret = b"uHsR7smbrRZ15fBhbb7DsKhS7h0kdJGB4EQXO5v69tE33VpFzvIrd7MVXA6fVrUf2FV7HdcE7kVE3neOf0W8mmxXAWQAjgLAAqUBrWB6czSvSk/v/kQe2BVQH7dfAnOrvk5rD/UICLgt3wE8lPdckWt038jVdMdiUfhPsFWSe1Qa2vpGDeFnnO6HHl6hJAV1apwmRoe6BtM78H5qVJ8xiYiFWsAkxF0.rPJ/jhfdrATQiBswvv8jR2otdLSnhe"
+splunk_10_6_v8 = "$8$RcfL7MhTgWWydXLkOgIFdg==$9Z27dBohODr2XDAXm8HaJiYRDCXfdG2Qn+VPd0FaKSfJNSEpzvKHZA=="
+# Same value with one bit of the GCM tag flipped; Splunk 10.6.1 rejects it
+splunk_10_6_v8_flipped_tag = "$8$RcfL7MhTgWWydXLkOgIFdg==$9Z27dBohODr2XDAXm8HaJiYRDCXfdG2Qn+VPd0FaKSfJNSEpzvKHZQ=="
+splunk_10_4_secret = b"hnOEurVCC.M.jk2ybxCpvyntsFRuTkUOx38FNeWRtsXe8IiEbQd4bNQiSa3RC41pvlWrXEw1PPzvqkpIUyXHdWnpPqZwv31EeGvfJJw/uNSjeZEU/O8ltvE2jLlNkOLOR79hyn5PRLXaUHkGUxaimDWPU53gocs7e/jVmUoaDYtINdgoXch6sQ6JCvApFTyYllV7hcz3zwapqYE96To8NvseBOToPT.UWbVylcgI8HnkHHwgb.EnQ5pWpK76cc"
+splunk_10_4_v7 = "$7$DWGYQ5PWuY/30UFbS972QaEfG+UIGw+Gspx4FgLYz+2sBYv7JiTUhg=="
+
+DECRYPT_FAILED = "^decryption failed: wrong splunk.secret or corrupted value$"
+
+
+def flip_last_byte(value):
+    """Flip one bit in the last byte (the GCM tag) of a $7$ or $8$ value"""
+    prefix, _, payload = value.rpartition("$")
+    raw = bytearray(base64.b64decode(payload))
+    raw[-1] ^= 1
+    return f"{prefix}${base64.b64encode(raw).decode()}"
+
 
 class TestSplunkSecrets(unittest.TestCase):
     def test_to_bytes(self):
@@ -104,7 +127,7 @@ class TestSplunkSecrets(unittest.TestCase):
         ciphertext = splunksecrets.encrypt_v8(
             splunk_secret,
             "temp1234",
-            salt=b"MDEyMzQ1Njc4OWFiY2RlZg==",
+            salt=b"0123456789abcdef",
             iv=b"i5dKMGaSIRNpJty4",
         )
         self.assertEqual(
@@ -127,7 +150,7 @@ class TestSplunkSecrets(unittest.TestCase):
         ciphertext = splunksecrets.encrypt_v8(
             "abc123",  # secret as a string (not bytes)
             "strings are fine",
-            salt=b"MDEyMzQ1Njc4OWFiY2RlZg==",
+            salt=b"0123456789abcdef",
             iv=b"zIDM0YmIgDQ2gMzk",
         )
         self.assertEqual(
@@ -147,7 +170,7 @@ class TestSplunkSecrets(unittest.TestCase):
         ciphertext = splunksecrets.encrypt_v8(
             splunk_secret[:30],
             "short123",
-            salt=b"MDEyMzQ1Njc4OWFiY2RlZg==",
+            salt=b"0123456789abcdef",
             iv=b"4KK0Ra8LWBKxUFQ8",
         )
         self.assertEqual(
@@ -369,3 +392,122 @@ class TestSplunkSecrets(unittest.TestCase):
         )
         plaintext2 = splunksecrets.decrypt_dbconnect(__dbconnect_secret, ciphertext)
         self.assertEqual(plaintext2, plaintext1)
+
+    def test_decrypt_dbconnect_fips(self):
+        # No FIPS encrypt function exists, so build the value the way DB Connect
+        # does in FIPS mode: PBKDF2-HMAC-SHA256 (32 iterations), AES-GCM
+        salt, iv = b"sixteenbytesalt.", b"\x01" * 12
+        kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt, iterations=32)
+        key = kdf.derive(dbconnect_secret)
+        blob = salt + iv + AESGCM(key).encrypt(iv, b"temp1234", None)
+        plaintext = decrypt_dbconnect_fips(
+            dbconnect_secret, base64.b64encode(blob).decode()
+        )
+        self.assertEqual(plaintext, "temp1234")
+
+    def test_decrypt_real_splunk_10_6_v8(self):
+        plaintext = splunksecrets.decrypt(splunk_10_6_secret, splunk_10_6_v8)
+        self.assertEqual(plaintext, "temp1234")
+
+    def test_decrypt_real_splunk_10_4_v7(self):
+        plaintext = splunksecrets.decrypt(splunk_10_4_secret, splunk_10_4_v7)
+        self.assertEqual(plaintext, "temp1234")
+
+    def test_decrypt_v8_flipped_tag_raises(self):
+        with self.assertRaisesRegex(ValueError, DECRYPT_FAILED):
+            splunksecrets.decrypt(splunk_10_6_secret, splunk_10_6_v8_flipped_tag)
+
+    def test_decrypt_v7_flipped_tag_raises(self):
+        with self.assertRaisesRegex(ValueError, DECRYPT_FAILED):
+            splunksecrets.decrypt(splunk_10_4_secret, flip_last_byte(splunk_10_4_v7))
+
+    def test_decrypt_v8_wrong_secret_raises(self):
+        with self.assertRaisesRegex(ValueError, DECRYPT_FAILED):
+            splunksecrets.decrypt(splunk_10_4_secret, splunk_10_6_v8)
+
+    def test_decrypt_v7_wrong_secret_raises(self):
+        with self.assertRaisesRegex(ValueError, DECRYPT_FAILED):
+            splunksecrets.decrypt(splunk_10_6_secret, splunk_10_4_v7)
+
+    def test_decrypt_v8_pads_short_secret(self):
+        plaintext = splunksecrets.decrypt(
+            splunk_secret[:30],
+            "$8$MDEyMzQ1Njc4OWFiY2RlZg==$NEtLMFJhOExXQkt4VUZROI10xX6S00wsY1D2wkc1P6RpaxsfP3YkhQ==",
+        )
+        self.assertEqual(plaintext, "short123")
+
+    def test_decrypt_v8_str_secret(self):
+        plaintext = splunksecrets.decrypt(
+            "abc123",  # secret as a string (not bytes)
+            "$8$MDEyMzQ1Njc4OWFiY2RlZg==$eklETTBZbUlnRFEyZ016a9KBFAzdEiW92H17QmPn11A4zFhRlP13obpRhtI9Zm+5",
+        )
+        self.assertEqual(plaintext, "strings are fine")
+
+    def test_decrypt_malformed_v8_raises(self):
+        with self.assertRaisesRegex(ValueError, r"^malformed \$8\$ value"):
+            splunksecrets.decrypt(splunk_secret, "$8$MDEyMzQ1Njc4OWFiY2RlZg==")
+
+    def test_decrypt_truncated_payload_raises(self):
+        # 20 bytes can't hold a 16-byte iv plus a 16-byte tag
+        truncated = "$7$" + base64.b64encode(b"\x00" * 20).decode()
+        with self.assertRaisesRegex(ValueError, "^malformed ciphertext: too short"):
+            splunksecrets.decrypt(splunk_secret, truncated)
+
+    def test_decrypt_unknown_prefix_raises(self):
+        with self.assertRaisesRegex(ValueError, "^unknown ciphertext format"):
+            splunksecrets.decrypt(splunk_secret, "temp1234")
+
+    def test_encrypt_new_rejects_wrong_iv_length(self):
+        with self.assertRaisesRegex(ValueError, "^iv must be 16 bytes, got 12$"):
+            splunksecrets.encrypt_new(splunk_secret, "temp1234", iv=b"\x01" * 12)
+
+    def test_encrypt_v8_rejects_wrong_iv_length(self):
+        with self.assertRaisesRegex(ValueError, "^iv must be 16 bytes, got 12$"):
+            splunksecrets.encrypt_v8(splunk_secret, "temp1234", iv=b"\x01" * 12)
+
+    def test_encrypt_v8_rejects_wrong_salt_length(self):
+        # The base64 form of a 16-byte salt is 24 bytes, so it's rejected too
+        with self.assertRaisesRegex(ValueError, "^salt must be 16 bytes, got 24$"):
+            splunksecrets.encrypt_v8(
+                splunk_secret, "temp1234", salt=b"MDEyMzQ1Njc4OWFiY2RlZg=="
+            )
+
+    def test_all_names_exist(self):
+        # `from splunksecrets import *` raises if any name in __all__ is missing
+        for name in splunksecrets.__all__:
+            self.assertTrue(hasattr(splunksecrets, name), name)
+
+    def test_cli_splunk_decrypt(self):
+        result = CliRunner().invoke(
+            main,
+            ["splunk-decrypt", "--ciphertext", splunk_10_6_v8],
+            env={"SPLUNK_SECRET": splunk_10_6_secret.decode()},
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.output, "temp1234\n")
+
+    def test_cli_splunk_decrypt_errors_cleanly(self):
+        for ciphertext, message in [
+            (
+                splunk_10_6_v8_flipped_tag,
+                "decryption failed: wrong splunk.secret or corrupted value",
+            ),
+            ("temp1234", "unknown ciphertext format"),
+        ]:
+            with self.subTest(ciphertext=ciphertext):
+                result = CliRunner().invoke(
+                    main,
+                    ["splunk-decrypt", "--ciphertext", ciphertext],
+                    env={"SPLUNK_SECRET": splunk_10_6_secret.decode()},
+                )
+                self.assertEqual(result.exit_code, 1)
+                self.assertIn(f"Error: {message}", result.output)
+
+    def test_cli_splunk_encrypt_rejects_wrong_iv_length(self):
+        result = CliRunner().invoke(
+            main,
+            ["splunk-encrypt", "--iv", "tooshort", "--password", "temp1234"],
+            env={"SPLUNK_SECRET": splunk_10_6_secret.decode()},
+        )
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn("Error: iv must be 16 bytes, got 8", result.output)
