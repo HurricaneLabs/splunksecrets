@@ -2,11 +2,16 @@ import re
 
 import click
 import pcrypt
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives import serialization
 
 from .dbconnect import decrypt_dbconnect, decrypt_dbconnect_fips, encrypt_dbconnect
 from .phantom import decrypt_phantom, encrypt_phantom
 from .splunk import decrypt, encrypt, encrypt_new
+
+DBCONNECT_DECRYPT_FAILED = (
+    "decryption failed: wrong DB Connect secret or corrupted value"
+)
 
 
 def __ensure_binary(ctx, param, value):
@@ -105,7 +110,12 @@ def dbconnect_encrypt(secret, password):
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 def dbconnect_decrypt(secret, ciphertext):
     """Decrypt password used for dbconnect identity"""
-    click.echo(decrypt_dbconnect(secret, ciphertext))
+    try:
+        plaintext = decrypt_dbconnect(secret, ciphertext)
+    except (InvalidTag, ValueError) as e:
+        # GCM fails with InvalidTag; CBC with bad padding, bad text or bad base64
+        raise click.ClickException(DBCONNECT_DECRYPT_FAILED) from e
+    click.echo(plaintext)
 
 
 @main.command("phantom-encrypt")
@@ -276,7 +286,11 @@ def dbconnect_legacy_encrypt(secret, password):
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 def dbconnect_decrypt_fips(secret, ciphertext):
     """Decrypt DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256"""
-    click.echo(decrypt_dbconnect_fips(secret, ciphertext))
+    try:
+        plaintext = decrypt_dbconnect_fips(secret, ciphertext)
+    except (InvalidTag, ValueError) as e:
+        raise click.ClickException(DBCONNECT_DECRYPT_FAILED) from e
+    click.echo(plaintext)
 
 
 @main.command("splunk-hash-passwd")

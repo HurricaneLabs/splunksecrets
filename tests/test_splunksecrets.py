@@ -503,6 +503,26 @@ class TestSplunkSecrets(unittest.TestCase):
                 self.assertEqual(result.exit_code, 1)
                 self.assertIn(f"Error: {message}", result.output)
 
+    def test_cli_dbconnect_decrypt_wrong_secret_errors_cleanly(self):
+        legacy = "U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c="
+        new = "c2l4dGVlbmJ5dGVzYWx0LgEBAQEBAQEBAQEBAV8SSOUDQd1NzcdSyxk+cU9xxBJNN8bJWg=="
+        for command, ciphertext in [
+            ("dbconnect-decrypt", legacy),
+            ("dbconnect-decrypt", new),
+            ("dbconnect-decrypt-fips", new),
+        ]:
+            with self.subTest(command=command, ciphertext=ciphertext):
+                result = CliRunner().invoke(
+                    main,
+                    [command, "--ciphertext", ciphertext],
+                    env={"DBCONNECT_SECRET": base64.b64encode(b"\x02" * 32).decode()},
+                )
+                self.assertEqual(result.exit_code, 1)
+                self.assertIn(
+                    "Error: decryption failed: wrong DB Connect secret or corrupted value",
+                    result.output,
+                )
+
     def test_cli_splunk_encrypt_rejects_wrong_iv_length(self):
         result = CliRunner().invoke(
             main,
