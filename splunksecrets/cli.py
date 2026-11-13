@@ -1,3 +1,4 @@
+import binascii
 import re
 
 import click
@@ -112,8 +113,13 @@ def dbconnect_decrypt(secret, ciphertext):
     """Decrypt password used for dbconnect identity"""
     try:
         plaintext = decrypt_dbconnect(secret, ciphertext)
+    except binascii.Error as e:
+        # a ValueError too, so catch it first: bad input, not a wrong secret
+        raise click.ClickException(
+            f"malformed ciphertext: not valid base64 ({e})"
+        ) from e
     except (InvalidTag, ValueError) as e:
-        # GCM fails with InvalidTag; CBC with bad padding, bad text or bad base64
+        # GCM fails with InvalidTag; CBC with bad padding or undecodable text
         raise click.ClickException(DBCONNECT_DECRYPT_FAILED) from e
     click.echo(plaintext)
 
@@ -288,6 +294,10 @@ def dbconnect_decrypt_fips(secret, ciphertext):
     """Decrypt DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256"""
     try:
         plaintext = decrypt_dbconnect_fips(secret, ciphertext)
+    except binascii.Error as e:
+        raise click.ClickException(
+            f"malformed ciphertext: not valid base64 ({e})"
+        ) from e
     except (InvalidTag, ValueError) as e:
         raise click.ClickException(DBCONNECT_DECRYPT_FAILED) from e
     click.echo(plaintext)

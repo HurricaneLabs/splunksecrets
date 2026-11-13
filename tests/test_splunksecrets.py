@@ -523,6 +523,24 @@ class TestSplunkSecrets(unittest.TestCase):
                     result.output,
                 )
 
+    def test_cli_dbconnect_decrypt_bad_base64_is_not_a_wrong_secret(self):
+        # The right secret, but the value lost its trailing "=" in a copy-paste
+        for command in ["dbconnect-decrypt", "dbconnect-decrypt-fips"]:
+            with self.subTest(command=command):
+                result = CliRunner().invoke(
+                    main,
+                    [
+                        command,
+                        "--ciphertext",
+                        "U2FsdGVkX19zYXVwKWo5ORLxPm8l7hVgaxH/DGPlq3c",
+                    ],
+                    env={"DBCONNECT_SECRET": dbconnect_secret.decode()},
+                )
+                self.assertEqual(result.exit_code, 1)
+                self.assertIn(
+                    "Error: malformed ciphertext: not valid base64", result.output
+                )
+
     def test_cli_splunk_encrypt_rejects_wrong_iv_length(self):
         result = CliRunner().invoke(
             main,
