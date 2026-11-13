@@ -3,14 +3,15 @@ import itertools
 import os
 
 from cryptography.hazmat.backends import default_backend
+
 try:
     from cryptography.hazmat.decrepit.ciphers.algorithms import ARC4
 except ImportError:
     from cryptography.hazmat.primitives.ciphers.algorithms import ARC4
-from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes
 
 
 def b64decode(encoded):

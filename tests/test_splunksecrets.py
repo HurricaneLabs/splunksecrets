@@ -9,7 +9,6 @@ from cryptography.hazmat.primitives.asymmetric.rsa import generate_private_key
 
 import splunksecrets
 
-
 splunk_secret = b"JX7cQAnH6Nznmild8MvfN8/BLQnGr8C3UYg3mqvc3ArFkaxj4gUt1RUCaRBD/r0CNn8xOA2oKX8/0uyyChyGRiFKhp6h2FA+ydNIRnN46N8rZov8QGkchmebZa5GAM5U50GbCCgzJFObPyWi5yT8CrSCYmv9cpRtpKyiX+wkhJwltoJzAxWbBERiLp+oXZnN3lsRn6YkljmYBqN9tZLTVVpsLvqvkezPgpv727Fd//5dRoWsWBv2zRp0mwDv3t\n"
 
 
@@ -165,7 +164,7 @@ class TestSplunkSecrets(unittest.TestCase):
         self.assertEqual(
             ciphertext,
             "$1$681ZK4BL5qRLsmMRT6EotpYVgOge69IZZhhxq0P+2ZBCaRTkci1IwiwRG9Ty2bHaSoG1p9QSXWIYA7mrYsyFqfWYqlvg+oQ+sg==",
-        )  # noqa: E501
+        )
 
     def test_encrypt_phantom(self):
         ciphertext = splunksecrets.encrypt_phantom(
@@ -215,7 +214,7 @@ class TestSplunkSecrets(unittest.TestCase):
     def test_decrypt_character_matches_salt2(self):
         plaintext = splunksecrets.decrypt(
             splunk_secret,
-            "$1$681ZK4BL5qRLsmMRT6EotpYVgOge69IZZhhxq0P+2ZBCaRTkci1IwiwRG9Ty2bHaSoG1p9QSXWIYA7mrYsyFqfWYqlvg+oQ+sg==",  # noqa: E501
+            "$1$681ZK4BL5qRLsmMRT6EotpYVgOge69IZZhhxq0P+2ZBCaRTkci1IwiwRG9Ty2bHaSoG1p9QSXWIYA7mrYsyFqfWYqlvg+oQ+sg==",
         )
         self.assertEqual(plaintext, "DEFAULTSA" * 8)
 

@@ -1,11 +1,12 @@
+import re
+
 import click
 import pcrypt
-import re
 from cryptography.hazmat.primitives import serialization
 
-from .dbconnect import encrypt_dbconnect, decrypt_dbconnect, decrypt_dbconnect_fips
-from .phantom import encrypt_phantom, decrypt_phantom
-from .splunk import encrypt, encrypt_new, decrypt
+from .dbconnect import decrypt_dbconnect, decrypt_dbconnect_fips, encrypt_dbconnect
+from .phantom import decrypt_phantom, encrypt_phantom
+from .splunk import decrypt, encrypt, encrypt_new
 
 
 def __ensure_binary(ctx, param, value):
@@ -60,7 +61,7 @@ def __load_phantom_secret_key(ctx, param, value):
 
 def __load_splunk_secret(ctx, param, value):
     if ctx.get_parameter_source(param.name).name != "ENVIRONMENT":
-        with open(value, "rb") as f: 
+        with open(value, "rb") as f:
             value = f.read().strip()
     elif isinstance(value, str):
         value = bytes(value, encoding="utf-8")
@@ -230,6 +231,7 @@ def splunk_legacy_encrypt(splunk_secret, password, no_salt):
 def splunk_legacy_decrypt(splunk_secret, ciphertext, no_salt):
     """Decrypt password using legacy Splunk algorithm (pre-7.2)"""
     click.echo(decrypt(splunk_secret, ciphertext, no_salt))
+
 
 @main.command("dbconnect-legacy-encrypt")
 @click.option(

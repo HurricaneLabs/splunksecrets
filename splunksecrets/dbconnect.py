@@ -2,13 +2,12 @@ import base64
 import os
 
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.ciphers import algorithms, Cipher, modes
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.padding import PKCS7
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
-
+from cryptography.hazmat.primitives.padding import PKCS7
 
 
 def get_key_and_iv(password, salt, algorithm=hashes.MD5):
@@ -183,5 +182,3 @@ def decrypt_dbconnect_fips(secret_key, ciphertext):
     aesgcm = AESGCM(key)
     plaintext = aesgcm.decrypt(iv, data, None)
     return plaintext.decode("utf-8")
-
-
