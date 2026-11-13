@@ -42,7 +42,7 @@ operaton
 
   Commands:
     dbconnect-decrypt           Decrypt password used for dbconnect identity
-    dbconnect-decrypt-fips      Decrypt DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256
+    dbconnect-decrypt-fips      Decrypt DB Connect password encrypted in FIPS mode
     dbconnect-encrypt           Encrypt password used for dbconnect identity
     dbconnect-legacy-encrypt    Encrypt password used for dbconnect identity using legacy algorithm
     phantom-decrypt             Decrypt password used for Phantom asset

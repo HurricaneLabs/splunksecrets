@@ -291,7 +291,7 @@ def dbconnect_legacy_encrypt(secret, password):
 )
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 def dbconnect_decrypt_fips(secret, ciphertext):
-    """Decrypt DB Connect password using FIPS-compliant PBKDF2HMAC-SHA256"""
+    """Decrypt DB Connect password encrypted in FIPS mode"""
     try:
         plaintext = decrypt_dbconnect_fips(secret, ciphertext)
     except binascii.Error as e:
