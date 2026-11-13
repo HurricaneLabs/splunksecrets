@@ -182,7 +182,8 @@ def encrypt_new(secret, plaintext, iv=None):
 def encrypt_v8(secret, plaintext, salt=None, iv=None):
     """Use the new(er) FIPS-friendly AES 256 GCM encryption in Splunk 10.6
 
-    `salt` and `iv` are raw 16-byte values; random ones are used when omitted.
+    `salt` and `iv` are raw 16-byte values (not base64); random ones are used
+    when omitted.
     """
 
     if isinstance(secret, str):
@@ -192,6 +193,10 @@ def encrypt_v8(secret, plaintext, salt=None, iv=None):
 
     if salt is None:
         salt = os.urandom(16)
+    elif not isinstance(salt, bytes):
+        raise TypeError(
+            f"salt must be 16 raw bytes (not base64), got {type(salt).__name__}"
+        )
     elif len(salt) != 16:
         raise ValueError(f"salt must be 16 bytes, got {len(salt)}")
 

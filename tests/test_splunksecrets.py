@@ -472,6 +472,12 @@ class TestSplunkSecrets(unittest.TestCase):
                 splunk_secret, "temp1234", salt=b"MDEyMzQ1Njc4OWFiY2RlZg=="
             )
 
+    def test_encrypt_v8_rejects_str_salt(self):
+        with self.assertRaisesRegex(
+            TypeError, r"^salt must be 16 raw bytes \(not base64\), got str$"
+        ):
+            splunksecrets.encrypt_v8(splunk_secret, "temp1234", salt="0123456789abcdef")
+
     def test_all_names_exist(self):
         # `from splunksecrets import *` raises if any name in __all__ is missing
         for name in splunksecrets.__all__:
