@@ -47,8 +47,8 @@ operaton
     dbconnect-legacy-encrypt    Encrypt password used for dbconnect identity using legacy algorithm
     phantom-decrypt             Decrypt password used for Phantom asset
     phantom-encrypt             Encrypt password used for Phantom asset
-    splunk-decrypt              Decrypt password using Splunk 7.2 algorithm
-    splunk-encrypt              Encrypt password using Splunk 7.2 algorithm
+    splunk-decrypt              Decrypt password using Splunk 7.2 or 10.6 algorithm
+    splunk-encrypt              Encrypt password using Splunk 7.2 or 10.6 algorithm
     splunk-hash-passwd          Generate password hash for use in...
     splunk-legacy-decrypt       Decrypt password using legacy Splunk algorithm...
     splunk-legacy-encrypt       Encrypt password using legacy Splunk algorithm...
@@ -63,7 +63,9 @@ followed by ``--help``.
 - **phantom-encrypt** and **phantom-decrypt** are for interacting with
   credentials stored in the Phantom database
 - **splunk-encrypt** and **splunk-decrypt** are for interacting with
-  credentials from Splunk 7.2 or newer
+  credentials from Splunk 7.2 or newer. ``splunk-decrypt`` reads both ``$7$``
+  and ``$8$`` values. ``splunk-encrypt`` writes ``$7$`` by default; pass
+  ``--v8`` to write ``$8$``, which only Splunk 10.6 or newer can read
 - **splunk-legacy-encrypt** and **splunk-legacy-decrypt** are for interacting
   with credentials from Splunk versions below 7.2
 - **splunk-hash-passwd** is for generating Splunk local user password hashes

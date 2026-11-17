@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives import serialization
 
 from .dbconnect import decrypt_dbconnect, decrypt_dbconnect_fips, encrypt_dbconnect
 from .phantom import decrypt_phantom, encrypt_phantom
-from .splunk import decrypt, encrypt, encrypt_new
+from .splunk import decrypt, encrypt, encrypt_new, encrypt_v8
 
 DBCONNECT_DECRYPT_FAILED = (
     "decryption failed: wrong DB Connect secret or corrupted value"
@@ -194,10 +194,21 @@ def phantom_decrypt(private_key, secret_key, ciphertext, asset_id):
     hide_input=True,
     callback=__ensure_text,
 )
-def splunk_encrypt(splunk_secret, password, iv=None):
-    """Encrypt password using Splunk 7.2 algorithm"""
+@click.option(
+    "--v8",
+    is_flag=True,
+    help="Write $8$ (Splunk 10.6) instead of $7$. Splunk before 10.6 can't read it.",
+)
+def splunk_encrypt(splunk_secret, password, iv=None, v8=False):
+    """Encrypt password using Splunk 7.2 or 10.6 algorithm
+
+    Writes $7$ (Splunk 7.2) by default, or $8$ (Splunk 10.6) with --v8.
+    """
     try:
-        ciphertext = encrypt_new(splunk_secret, password, iv)
+        if v8:
+            ciphertext = encrypt_v8(splunk_secret, password, iv=iv)
+        else:
+            ciphertext = encrypt_new(splunk_secret, password, iv)
     except ValueError as e:
         raise click.ClickException(str(e)) from e
     click.echo(ciphertext)
@@ -213,7 +224,7 @@ def splunk_encrypt(splunk_secret, password, iv=None):
 )
 @click.option("--ciphertext", envvar="PASSWORD", prompt=True, callback=__ensure_text)
 def splunk_decrypt(splunk_secret, ciphertext):
-    """Decrypt password using Splunk 7.2 algorithm"""
+    """Decrypt password using Splunk 7.2 or 10.6 algorithm"""
     try:
         plaintext = decrypt(splunk_secret, ciphertext)
     except ValueError as e:

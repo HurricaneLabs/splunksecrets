@@ -555,3 +555,53 @@ class TestSplunkSecrets(unittest.TestCase):
         )
         self.assertEqual(result.exit_code, 1)
         self.assertIn("Error: iv must be 16 bytes, got 8", result.output)
+
+    def test_cli_splunk_encrypt_defaults_to_v7(self):
+        result = CliRunner().invoke(
+            main,
+            ["splunk-encrypt", "--password", "temp1234"],
+            env={"SPLUNK_SECRET": splunk_10_6_secret.decode()},
+        )
+        self.assertEqual(result.exit_code, 0, result.output)
+        self.assertTrue(result.output.startswith("$7$"), result.output)
+
+    def test_cli_splunk_encrypt_v8_round_trips(self):
+        env = {"SPLUNK_SECRET": splunk_10_6_secret.decode()}
+        encrypted = CliRunner().invoke(
+            main, ["splunk-encrypt", "--v8", "--password", "temp1234"], env=env
+        )
+        self.assertEqual(encrypted.exit_code, 0, encrypted.output)
+        ciphertext = encrypted.output.strip()
+        self.assertTrue(ciphertext.startswith("$8$"), ciphertext)
+
+        decrypted = CliRunner().invoke(
+            main, ["splunk-decrypt", "--ciphertext", ciphertext], env=env
+        )
+        self.assertEqual(decrypted.exit_code, 0, decrypted.output)
+        self.assertEqual(decrypted.output.strip(), "temp1234")
+
+    def test_cli_splunk_encrypt_v8_uses_iv(self):
+        result = CliRunner().invoke(
+            main,
+            [
+                "splunk-encrypt",
+                "--v8",
+                "--iv",
+                "i5dKMGaSIRNpJty4",
+                "--password",
+                "temp1234",
+            ],
+            env={"SPLUNK_SECRET": splunk_10_6_secret.decode()},
+        )
+        self.assertEqual(result.exit_code, 0, result.output)
+        payload = result.output.strip().split("$")[3]
+        self.assertEqual(base64.b64decode(payload)[:16], b"i5dKMGaSIRNpJty4")
+
+    def test_cli_splunk_encrypt_v8_rejects_wrong_iv_length(self):
+        result = CliRunner().invoke(
+            main,
+            ["splunk-encrypt", "--v8", "--iv", "tooshort", "--password", "temp1234"],
+            env={"SPLUNK_SECRET": splunk_10_6_secret.decode()},
+        )
+        self.assertEqual(result.exit_code, 1)
+        self.assertIn("Error: iv must be 16 bytes, got 8", result.output)
