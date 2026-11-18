@@ -182,6 +182,24 @@ Known Issues
 
 Version History
 ---------------
+Version 1.2.0 (2026-11-18)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+- Added support for Splunk 10.6 ``$8$`` passwords: ``splunk-decrypt`` reads
+  them, ``splunk-encrypt --v8`` writes them, and ``encrypt_v8`` writes them
+  from the library
+- Added ``dbconnect-decrypt-fips`` for DB Connect passwords encrypted in FIPS
+  mode. Thanks to grokdesigns for this contribution.
+- ``$7$`` and ``$8$`` decryption now checks the GCM tag, so a wrong
+  splunk.secret or a corrupted value fails with a clear error instead of
+  returning garbage
+- ``splunk-encrypt``, ``splunk-decrypt``, ``splunk-legacy-decrypt`` and the
+  DB Connect decrypt commands report bad input and failed decryption as a
+  one-line error instead of a traceback
+- **Behavior change for library callers:** ``splunksecrets.decrypt`` now
+  raises ``ValueError`` for an unknown prefix (it used to return ``None``),
+  and for a wrong splunk.secret or a corrupted ``$7$``/``$8$`` value (it used
+  to return garbage or raise ``UnicodeDecodeError``)
+
 Version 1.1.0 (2025-06-05)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 - Added support for encryption/decryption of DBConnect credentials using newer algorithm
