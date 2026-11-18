@@ -140,7 +140,7 @@ the initialization vector (``iv``) for the AES encryption. The password
 to be encrypted is padded using PKCS7 padding prior to encryption.
 
 DBConnect pre ~3.12
-~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 DBConnect used to encrypt passwords using the OpenSSL ``aes-256-cbc`` command.
 This changed somewhere around 3.12 though I haven't bothered to find the exact
@@ -193,7 +193,7 @@ Version 1.1.0 (2025-06-05)
 Version 1.0.1
 ~~~~~~~~~~~~~~
 - Short secrets are padded in the same way Splunk itself does it. Thanks to
-Matt Anderson for this contribution.
+  Matt Anderson for this contribution.
 
 Version 1.0.0 (2021-06-07)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
