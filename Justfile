@@ -19,6 +19,15 @@ test:
 
 validate: format lint test
 
+format-check:
+	uv run ruff format --check
+
+lint-check:
+	uv run ruff check
+
+# CI runs this: it fails on format and lint problems instead of fixing them
+check: format-check lint-check test
+
 dockerize:
 	docker build -t python-repo-template .
 
