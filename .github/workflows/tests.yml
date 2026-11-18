@@ -3,7 +3,7 @@ name: Tests
 on:
   push:
     branches:
-      - "*"
+      - "**"  # "*" skips branch names with a /
   pull_request:
     branches:
       - master
@@ -12,6 +12,9 @@ on:
 jobs:
   main-lint-test:
     runs-on: ubuntu-latest
+    env:
+      # without this uv picks the runner's /usr/bin/python3, whatever the matrix says
+      UV_PYTHON: ${{ matrix.python-version }}
     strategy:
       matrix:
         python-version:
@@ -20,6 +23,7 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
 
     steps:
       - name: 🛎️ Checkout
@@ -30,6 +34,8 @@ jobs:
 
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: 🚀 Install just 
         uses: extractions/setup-just@v2
@@ -37,5 +43,8 @@ jobs:
       - name: 🦾 Install the project
         run: just dev-sync
           
-      - name: 💅 🧪 Format, Lint and test
-        run: just validate
+      - name: 🐍 Check the matrix Python is the one in use
+        run: uv run python -c "import sys; v = '${{ matrix.python-version }}'; assert sys.version.startswith(v + '.'), sys.version"
+
+      - name: 💅 🧪 Check format and lint, then test
+        run: just check
